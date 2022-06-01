@@ -17,7 +17,8 @@
 '''
 from flask import Flask, render_template, request, redirect, make_response
 
-app = Flask('Walker')
+app = Flask('Walker',
+            template_folder="build", static_folder="build/static")
 
 '''
                 这里统一定义错误类型，包括(错误代码，错误输出)
@@ -220,7 +221,13 @@ def adminGetTable(param):
 '''
 
 
-@app.route('/', methods=['POST'])
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def catch_all(path):
+    return render_template('index.html')
+
+
+@app.route('/api', methods=['POST'])
 def resp():
     req = request.json
     if req['method'] not in methods:
@@ -236,55 +243,5 @@ def resp():
     return eval(req['method'] + '(' + req['params'] + ')')
 
 
-'''
-                这里是GET请求的页面设计，但是我还没拿到前端页面，就暂时写成这样了，得到了前端页面再改
-'''
-
-
-@app.route('/login', methods=['GET'])
-def login():
-    return 'login'
-
-
-@app.route('/user', methods=['GET'])
-def user():
-    return 'user'
-
-
-@app.route('/admin', methods=['GET'])
-def admin():
-    return 'admin'
-
-
-@app.route('/user/order', methods=['GET'])
-def chargeInfo():
-    return 'user_order'
-
-
-@app.route('/user/order_info', methods=['GET'])
-def orderInfo():
-    return 'user_order_info'
-
-
-@app.route('/user/bills', methods=['GET'])
-def bills():
-    return 'user_bills'
-
-
-@app.route('/admin/chargers', methods=['GET'])
-def getChargers():
-    return 'chargers'
-
-
-@app.route('/admin/chargers/cars', methods=['GET'])
-def getCars():
-    return 'cars'
-
-
-@app.route('/admin/table', methods=['GET'])
-def table():
-    return 'table'
-
-
 if __name__ == '__main__':
-    app.run()
+    app.run(port=8081)
