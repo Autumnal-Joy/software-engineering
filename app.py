@@ -236,8 +236,8 @@ def resp():
     elif len(req['params']) != methods[req['method']]:
         return ErrorTemplate(ParametersNumberNotExpected)
 
-    username = req['params'][0]
-    password = req['params'][1]
+    username = req['params']['username']
+    password = req['params']['password']
     if userCheck(username, password) is None:
         return ErrorTemplate(UserNotFound, {'username': username})
 
