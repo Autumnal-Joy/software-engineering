@@ -1,6 +1,6 @@
 '''
 
-@Date: 2022/06/01
+@Date: 2022/06/02
 @Author: Walker
 @Description:
 
@@ -24,7 +24,7 @@ app = Flask('Walker',
                 这里统一定义错误类型，包括(错误代码，错误输出)
 '''
 MethodNotFound = 'Method Not Found'
-ParametersNumberNotExpected = 'Parameter Number Not Expected'
+ParametersNotExpected = 'Parameters Not Expected'
 UserNotFound = 'User Not Found Or Password Not Expected'
 
 '''
@@ -89,34 +89,8 @@ def SuccessTemplate(data=None, message="success"):
     return succ
 
 
-'''
-                    
-                    这里是前端可以调用的所有的函数的名字和对应的参数数量。
 
-'''
-methods = {
-    'userLogin': 2,
-    'userSendOrder': 4,
-    'userGetOrder': 2,
-    'userGetLineNo': 2,
-    'userGetRank': 2,
-    'userSendChargeType': 3,
-    'userSendChargeQuantity': 3,
-    'userSendCancelCharge': 2,
-    'userGetBillsList': 2,
-    'userGetBill': 3,
-    'adminLogin': 2,
-    'adminGetChargers': 2,
-    'adminTurnCharger': 4,
-    'adminGetCars': 3,
-    'adminGetTable': 2
-}
-
-'''
-
-                这部分都是在methods中出现过的rpc接口，这里会封装郭阳写好的接口，现在只有一个返回值模板，如果有不对的地方请告知
-
-'''
+methods = set()
 
 
 # 这个是每次都有的用户验证，大概应该是和login的逻辑一样，但是返回值不是json，而是调用rpc
@@ -125,101 +99,93 @@ def userCheck(username, password):
         'username': 'walker'
     }
 
+'''
 
-def userLogin(param):
-    # return ErrorTemplate(UserNotFound)
-    return SuccessTemplate()
+                这部分都是前端可以调用的接口，这里会封装郭阳写好的接口，现在只有一个返回值模板，如果有不对的地方请告知
 
+'''
+class Service:
 
-def userSendOrder(param):
-    # return ErrorTemplate(...)
-    return SuccessTemplate()
+    def userLogin(self, param):
+        # return ErrorTemplate(UserNotFound)
+        return SuccessTemplate()
 
+    def userSendOrder(self, param):
+        # return ErrorTemplate(...)
+        return SuccessTemplate()
 
-def userGetOrder(param):
-    return SuccessTemplate({
-        "charge_type": "fast",
-        "charge_num": 0.53  # 我瞎写的
-    })
+    def userGetOrder(self, param):
+        return SuccessTemplate({
+            "charge_type": "fast",
+            "charge_num": 0.53  # 我瞎写的
+        })
 
+    def userGetLineNo(self, param):
+        return SuccessTemplate({
+            "number": 10
+        })
 
-def userGetLineNo(param):
-    return SuccessTemplate({
-        "number": 10
-    })
+    def userGetRank(self, param):
+        return SuccessTemplate({
+            "number": 10
+        })
 
+    def userSendChargeType(self, param):
+        return SuccessTemplate()
 
-def userGetRank(param):
-    return SuccessTemplate({
-        "number": 10
-    })
+    def userSendCahrgeQuantity(self, param):
+        return SuccessTemplate()
 
+    def userSendCancelCharge(self, param):
+        return SuccessTemplate()
 
-def userSendChargeType(param):
-    return SuccessTemplate()
+    def userGetBill(self, param):
+        return SuccessTemplate({
+            "billID": 1,
+            "billTime": 1234,
+            "chargerID": 2,
+            "chargeQuantity": "high",
+            "chargeTime": 1234,
+            "startTime": 1234,
+            "endTime": 1234,
+            "chargeCost": 100,
+            "serviceCost": 100,
+            "cost": 200
+        })
 
+    def userGetBillsList(self, param):
+        return SuccessTemplate([
+            {"billID": 1, "billTime": 1234, "chargeQuantity": "high"}
+        ])
 
-def userSendCahrgeQuantity(param):
-    return SuccessTemplate()
+    def adminLogin(self, param):
+        # return ErrorTemplate(UserNotFound)
+        return SuccessTemplate()
 
+    def adminGetChargers(self, param):
+        return SuccessTemplate([
+            {"working": False, "totalChargeCount": 100, "totalChargeTime": 100, "totalChargeQuantity": "high"}
+        ])
 
-def userSendCancelCharge(param):
-    return SuccessTemplate()
+    def adminTurnCharger(self, param):
+        return SuccessTemplate()
 
+    def adminGetCars(self, param):
+        return SuccessTemplate([
+            {"username": "walker", "chargeQuantity": "high", "waitTime": 1234}
+        ])
 
-def userGetBill(param):
-    return SuccessTemplate({
-        "billID": 1,
-        "billTime": 1234,
-        "chargerID": 2,
-        "chargeQuantity": "high",
-        "chargeTime": 1234,
-        "startTime": 1234,
-        "endTime": 1234,
-        "chargeCost": 100,
-        "serviceCost": 100,
-        "cost": 200
-    })
-
-
-def userGetBillsList(param):
-    return SuccessTemplate([
-        {"billID": 1, "billTime": 1234, "chargeQuantity": "high"}
-    ])
-
-
-def adminLogin(param):
-    # return ErrorTemplate(UserNotFound)
-    return SuccessTemplate()
-
-
-def adminGetChargers(param):
-    return SuccessTemplate([
-        {"working": False, "totalChargeCount": 100, "totalChargeTime": 100, "totalChargeQuantity": "high"}
-    ])
-
-
-def adminTurnCharger(param):
-    return SuccessTemplate()
-
-
-def adminGetCars(param):
-    return SuccessTemplate([
-        {"username": "walker", "chargeQuantity": "high", "waitTime": 1234}
-    ])
-
-
-def adminGetTable(param):
-    return SuccessTemplate({
-        "time": 1234, "chargerID": 1, "totalChargeCount": 10, "totalChargeTime": 100,
-        "totalChargeQuantity": "high", "totalChargeCost": 100, "totalServiceCost": 100,
-        "totalCost": 100
-    })
+    def adminGetTable(self, param):
+        return SuccessTemplate({
+            "time": 1234, "chargerID": 1, "totalChargeCount": 10, "totalChargeTime": 100,
+            "totalChargeQuantity": "high", "totalChargeCost": 100, "totalServiceCost": 100,
+            "totalCost": 100
+        })
 
 
 '''
                 我这里设计的是POST请求是这样：
-                1. POST的路由全部为根路由。
+                1. POST的路由全部为/api。
                 2. 所有的POST都是rpc json
                 3. 所有的输入都从req获取，解析req的时候就只看body的rpc json，不提取path variable 也不提取 request parameter
                 4. POST不处理页面跳转任务，如果需要跳转，请在POST之后再发送GET（是我不太会写哈哈哈）
@@ -227,6 +193,8 @@ def adminGetTable(param):
                 5. 无论是什么rpc，都首先检查头两个参数的用户信息，向郭阳传参时也没有拿掉。
 '''
 
+
+service = Service()
 
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
@@ -239,17 +207,21 @@ def resp():
     req = request.json
     if req['method'] not in methods:
         return ErrorTemplate(MethodNotFound)
-    elif len(req['params']) != methods[req['method']]:
-        return ErrorTemplate(ParametersNumberNotExpected)
 
     username = req['params']['username']
     password = req['params']['password']
 
     if userCheck(username, password) is None:
         return ErrorTemplate(UserNotFound, {'username': username})
-
-    return eval(req['method'] + '(' + str(req['params']) + ')')  # 就是需要强转
+    try:
+        result = eval('service.' + req['method'] + '(' + str(req['params']) + ')')
+        return result
+    except:
+        return ErrorTemplate(ParametersNotExpected, req['params'])
 
 
 if __name__ == '__main__':
+
+    methods = set(dir(Service))
+    # print(methods)
     app.run(port=8081)
