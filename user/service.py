@@ -3,48 +3,73 @@ class Service:
     def __init__(self, db):
         self.db = db
 
+    # params.username
+    # params.password
     def userLogin(self, params):
         data, err = True, None  # False, "User Not Fount"
         return data, err
 
+    # params.username
+    # params.password
     def userRegister(self, params):
         data, err = True, None  # False, "User Not Fount"
         return data, err
 
+    # params.username
+    # params.chargeTime
+    # params.chargeType: "fast"|"slow"
     def userSendOrder(self, params):
         return True, None
 
+    # params.username
     def userGetOrder(self, params):
-        return {
-                   "charge_type": "fast",
-                   "charge_num": 0.53
-               }, None
+        # data, err = None, "用户尚未预约"
+        data, err = {
+                        "chargeType": "fast",
+                        "chargeTime": 12
+                    }, None
+        return data, err
 
+    # params.username
     def userGetLineNo(self, params):
         return {
-                   "number": 10
+                   "lineNo": "T10"
                }, None
 
+    # params.username
     def userGetRank(self, params):
         return {
-                   "number": 10
+                   "rank": 10
                }, None
 
+    # params.username
+    # params.chargeType
     def userSendChargeType(self, params):
         return True, None
 
-    def userSendCahrgeQuantity(self, param):
+    # params.username
+    # params.chargeTime
+    def userSendChargeTime(self, param):
         return True, None
 
+    # params.username
     def userSendCancelCharge(self, param):
         return True, None
 
+    # params.username
+    def userGetBillsList(self, param):
+        return [
+                   {"billID": 1, "billTime": 1234, "chargeQuantity": "high"}
+               ], None
+
+    # params.username
+    # params.billID
     def userGetBill(self, param):
         return {
                    "billID": 1,
                    "billTime": 1234,
                    "chargerID": 2,
-                   "chargeQuantity": "high",
+                   "chargeQuantity": 123,
                    "chargeTime": 1234,
                    "startTime": 1234,
                    "endTime": 1234,
@@ -52,8 +77,3 @@ class Service:
                    "serviceCost": 100,
                    "cost": 200
                }, None
-
-    def userGetBillsList(self, param):
-        return [
-                   {"billID": 1, "billTime": 1234, "chargeQuantity": "high"}
-               ], None
