@@ -241,9 +241,7 @@ def resp():
     if userCheck(username, password) is None:
         return ErrorTemplate(UserNotFound, {'username': username})
 
-    # 1. req['params']是一个list, 例如 req['params'] = ['username', 'password'] @ywx
-    # 2. 参数两边不加引号, 那么eval会把传的参数当作变量名 @ywx
-    return eval(req['method'] + '(' + req['params'] + ')')
+    return eval(req['method'] + '(' + str(req['params']) + ')')  # 缺了一个强转
 
 
 if __name__ == '__main__':
