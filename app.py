@@ -23,9 +23,9 @@ app = Flask('Walker',
 '''
                 这里统一定义错误类型，包括(错误代码，错误输出)
 '''
-MethodNotFound = (-32601, 'Method Not Found')
-ParametersNumberNotExpected = (-36602, 'Parameter Number Not Expected')
-UserNotFound = (0, 'User Not Found Or Password Not Expected')
+MethodNotFound = 'Method Not Found'
+ParametersNumberNotExpected = 'Parameter Number Not Expected'
+UserNotFound = 'User Not Found Or Password Not Expected'
 
 '''
                 ErrorObject做第一次封装，ErrorTemplate是最终的错误返回模板，假设遇到了方法不正确的错误，我将返回
@@ -33,7 +33,6 @@ UserNotFound = (0, 'User Not Found Or Password Not Expected')
                     "jsonrpc": 2.0,
                     "success": false,
                     "error": {
-                        "code": -32601,
                         "message": "Method Not Found",
                         "data": null
                     }
@@ -43,8 +42,7 @@ UserNotFound = (0, 'User Not Found Or Password Not Expected')
 
 def ErrorObject(error, data):
     return {
-        'code': error[0],
-        'message': error[1],
+        'message': error,
         'data': data
     }
 
@@ -59,25 +57,33 @@ def ErrorTemplate(error, data=None):
 
 '''
                 返回正确的resp的标准格式，这里是按照json rpc的标准定义的，
-                result是实际的返回数据，data代表额外信息，表示返回的信息是正确类型还是错误类型。
+                result是实际的返回数据，data代表返回数据，message表示返回的数据说明，
+                success表示返回的信息是正确类型还是错误类型。
                 例如getBillsList返回正确信息将返回：
                     {
                         'jsonrpc': 2.0,
                         'error': None,
-                        'result': [
-                            {"billID": 1, "billTime": 1234, "chargeQuantity": "high"}
-                        ],
-                        'success': True
+                        'result' : {
+                            "message" : "success",
+                            "data" : [
+                                {"billID": 1, "billTime": 1234, "chargeQuantity": "high"}
+                            ]
+                        },
+                        'success': true
                     }
+
 
 '''
 
 
-def SuccessTemplate(result):
+def SuccessTemplate(data=None, message="success"):
     succ = {
         'jsonrpc': 2.0,
         'error': None,
-        'result': result,
+        'result': {
+            "data": data,
+            "message": message
+        },
         'success': True
     }
     return succ
@@ -113,7 +119,7 @@ methods = {
 '''
 
 
-# 这个是干啥的 @ywx
+# 这个是每次都有的用户验证，大概应该是和login的逻辑一样，但是返回值不是json，而是调用rpc
 def userCheck(username, password):
     return {
         'username': 'walker'
@@ -122,12 +128,12 @@ def userCheck(username, password):
 
 def userLogin(param):
     # return ErrorTemplate(UserNotFound)
-    return SuccessTemplate("success")
+    return SuccessTemplate()
 
 
 def userSendOrder(param):
     # return ErrorTemplate(...)
-    return SuccessTemplate("success")
+    return SuccessTemplate()
 
 
 def userGetOrder(param):
@@ -150,15 +156,15 @@ def userGetRank(param):
 
 
 def userSendChargeType(param):
-    return SuccessTemplate("success")
+    return SuccessTemplate()
 
 
 def userSendCahrgeQuantity(param):
-    return SuccessTemplate("success")
+    return SuccessTemplate()
 
 
 def userSendCancelCharge(param):
-    return SuccessTemplate("success")
+    return SuccessTemplate()
 
 
 def userGetBill(param):
@@ -184,7 +190,7 @@ def userGetBillsList(param):
 
 def adminLogin(param):
     # return ErrorTemplate(UserNotFound)
-    return SuccessTemplate("success")
+    return SuccessTemplate()
 
 
 def adminGetChargers(param):
@@ -194,7 +200,7 @@ def adminGetChargers(param):
 
 
 def adminTurnCharger(param):
-    return SuccessTemplate("success")
+    return SuccessTemplate()
 
 
 def adminGetCars(param):
@@ -238,10 +244,11 @@ def resp():
 
     username = req['params']['username']
     password = req['params']['password']
+
     if userCheck(username, password) is None:
         return ErrorTemplate(UserNotFound, {'username': username})
 
-    return eval(req['method'] + '(' + str(req['params']) + ')')  # 缺了一个强转
+    return eval(req['method'] + '(' + str(req['params']) + ')')  # 就是需要强转
 
 
 if __name__ == '__main__':
