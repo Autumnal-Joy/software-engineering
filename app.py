@@ -132,34 +132,44 @@ def resp():
     req = request.json
     print(req)
 
-    # 这个嵌套怎么扁平化处理，我不太清楚 @ywx
-    try:
-        fn = getattr(userService, req["method"])
-    except AttributeError:
-        try:
-            fn = getattr(adminService, req["method"])
-        except AttributeError:
-            return ErrorTemplate(MethodNotFound)
+    result, err = None, None
 
     try:
+        method = req["method"]
+        params = req['params']
         username = req['params']['username']
         password = req['params']['password']
-        params = req['params']
     except KeyError:
         return ErrorTemplate(ParametersNotExpected)
 
-    # 这里没有根据用户和管理的不同身份进行特殊化处理
-    if userCheck(username, password) is None:
-        return ErrorTemplate(UserNotFound, {'username': username})
+    if method == "userLogin":
+        result, err = userService.userLogin(params)
 
-    try:
-        result, err = fn(**params)
-        if err is None:
-            return result
-        else:
-            return ErrorTemplate(err)
-    except TypeError:
-        return ErrorTemplate(ParametersNotExpected, req['params'])
+    elif method == "userRegister":
+        result, err = userService.userRegister(params)
+
+    elif method == "adminLogin":
+        result, err = adminService.adminLogin(params)
+
+    else:
+        params.pop('password', None)
+
+        try:
+            if method.startswith("user"):
+                fn = getattr(userService, method)
+                result, err = fn(params)
+            elif method.startswith("admin"):
+                fn = getattr(adminService, method)
+                result, err = fn(params)
+            else:
+                err = MethodNotFound
+        except AttributeError:
+            err = MethodNotFound
+
+    if err is None:
+        return SuccessTemplate(result)
+    else:
+        return ErrorTemplate(err)
 
 
 if __name__ == '__main__':

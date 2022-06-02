@@ -3,30 +3,34 @@ class Service:
     def __init__(self, db):
         self.db = db
 
-    def userLogin(self, param):
+    def userLogin(self, params):
         data, err = True, None  # False, "User Not Fount"
         return data, err
 
-    def userSendOrder(self, param):
+    def userRegister(self, params):
+        data, err = True, None  # False, "User Not Fount"
+        return data, err
+
+    def userSendOrder(self, params):
         return True, None
 
-    def userGetOrder(self, param):
+    def userGetOrder(self, params):
         return {
                    "charge_type": "fast",
                    "charge_num": 0.53
                }, None
 
-    def userGetLineNo(self, param):
+    def userGetLineNo(self, params):
         return {
                    "number": 10
                }, None
 
-    def userGetRank(self, param):
+    def userGetRank(self, params):
         return {
                    "number": 10
                }, None
 
-    def userSendChargeType(self, param):
+    def userSendChargeType(self, params):
         return True, None
 
     def userSendCahrgeQuantity(self, param):
@@ -53,26 +57,3 @@ class Service:
         return [
                    {"billID": 1, "billTime": 1234, "chargeQuantity": "high"}
                ], None
-
-    def adminLogin(self, param):
-        return True, None
-
-    def adminGetChargers(self, param):
-        return [
-                   {"working": False, "totalChargeCount": 100, "totalChargeTime": 100, "totalChargeQuantity": "high"}
-               ], None
-
-    def adminTurnCharger(self, param):
-        return True, None
-
-    def adminGetCars(self, param):
-        return [
-                   {"username": "walker", "chargeQuantity": "high", "waitTime": 1234}
-               ], None
-
-    def adminGetTable(self, param):
-        return {
-                   "time": 1234, "chargerID": 1, "totalChargeCount": 10, "totalChargeTime": 100,
-                   "totalChargeQuantity": "high", "totalChargeCost": 100, "totalServiceCost": 100,
-                   "totalCost": 100
-               }, None
