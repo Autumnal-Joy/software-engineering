@@ -16,7 +16,7 @@ class Service:
         return data, err
 
     # params.username
-    # params.chargeTime
+    # params.chargeQuantity
     # params.chargeType: "fast"|"slow"
     def userSendOrder(self, params):
         return True, None
@@ -26,7 +26,7 @@ class Service:
         # data, err = None, "用户尚未预约"
         data, err = {
                         "chargeType": "fast",
-                        "chargeTime": 12
+                        "chargeQuantity": 12
                     }, None
         return data, err
 
@@ -39,17 +39,19 @@ class Service:
     # params.username
     def userGetRank(self, params):
         return {
-                   "rank": 10
+                   "rank": 10,
+                   "waitingTime": 1654275723231
                }, None
 
     # params.username
     # params.chargeType
+    # params.chargeQuantity
     def userSendChargeType(self, params):
         return True, None
 
     # params.username
-    # params.chargeTime
-    def userSendChargeTime(self, param):
+    # params.chargeQuantity
+    def userSendChargeQuantity(self, param):
         return True, None
 
     # params.username
