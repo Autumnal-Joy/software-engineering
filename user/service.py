@@ -126,7 +126,7 @@ class Service:
         status              用于没有实际数据返回时，表示操作是否成功
     """
 
-    def userSendChargeQuantity(self, param):
+    def userSendChargeQuantity(self, params):
         # data, err = None, "用户尚未预约"
         data, err = {
                         "status": True
@@ -141,7 +141,7 @@ class Service:
         status              用于没有实际数据返回时，表示操作是否成功
     """
 
-    def userSendCancelCharge(self, param):
+    def userSendCancelCharge(self, params):
         # data, err = None, "用户尚未预约"
         data, err = {
                         "status": True
@@ -158,7 +158,7 @@ class Service:
         chargeQuantity      充电量
     """
 
-    def userGetBillsList(self, param):
+    def userGetBillsList(self, params):
         # data, err = None, "未知错误"
         data, err = [
                         {"billID": 1, "billTime": 1654275723231, "chargeQuantity": 24},
@@ -183,16 +183,16 @@ class Service:
         cost                总费用
     """
 
-    def userGetBill(self, param):
+    def userGetBill(self, params):
         # data, err = None, "未知错误"
         data, err = {
                         "billID": 1,
-                        "billTime": 1654276723231,
+                        "billTime": 1654271723231,
                         "chargerID": 1,
                         "chargeQuantity": 30,
                         "chargeTime": 123456789,
-                        "startTime": 1654275723231,
-                        "endTime": 1654275723231,
+                        "startTime": 1654272723231,
+                        "endTime": 1654475733231,
                         "chargeCost": 100,
                         "serviceCost": 100,
                         "cost": 200

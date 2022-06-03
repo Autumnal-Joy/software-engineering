@@ -29,7 +29,6 @@ app = Flask('Walker',
 '''
 MethodNotFound = 'Method Not Found'
 ParametersNotExpected = 'Parameters Not Expected'
-UserNotFound = 'User Not Found Or Password Not Expected'
 
 '''
                 ErrorObject做第一次封装，ErrorTemplate是最终的错误返回模板，假设遇到了方法不正确的错误，我将返回
@@ -66,7 +65,6 @@ def ErrorTemplate(error, data=None):
                 例如getBillsList返回正确信息将返回：
                     {
                         'jsonrpc': 2.0,
-                        'error': None,
                         'result' : {
                             "message" : "success",
                             "data" : [
@@ -83,7 +81,6 @@ def ErrorTemplate(error, data=None):
 def SuccessTemplate(data=None, message="success"):
     succ = {
         'jsonrpc': 2.0,
-        'error': None,
         'result': {
             "data": data,
             "message": message
@@ -137,19 +134,18 @@ def resp():
     try:
         method = req["method"]
         params = req['params']
-        username = req['params']['username']
-        password = req['params']['password']
+        user = {"username": req['params']['username'], "password": req['params']['password']}
     except KeyError:
         return ErrorTemplate(ParametersNotExpected)
 
     if method == "userLogin":
-        result, err = userService.userLogin(params)
+        result, err = userService.userLogin(user)
 
     elif method == "userRegister":
-        result, err = userService.userRegister(params)
+        result, err = userService.userRegister(user)
 
     elif method == "adminLogin":
-        result, err = adminService.adminLogin(params)
+        result, err = adminService.adminLogin(user)
 
     else:
         params.pop('password', None)
