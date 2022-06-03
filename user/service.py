@@ -86,7 +86,7 @@ class Service:
     """ 
     params
         username            用户名
-    
+
     return
         rank                正整数表示等待区前方等候者的熟练，0表示正在充电区
         endingTime          预计完成充电时间（毫秒时间戳）
@@ -174,7 +174,7 @@ class Service:
     returns
         billID              详单编号
         billTime            详单生成时间（毫秒时间戳）
-        chargeQuantity      用户充电量
+        chargeQuantity      用户充电量（度）
         chargeTime          用户充电时长（毫秒时间戳）
         startTime           用户开始充电时间（毫秒时间戳）
         endTime             用户结束充电时间（毫秒时间戳）
