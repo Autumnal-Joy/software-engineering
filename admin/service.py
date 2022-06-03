@@ -83,17 +83,15 @@ class Service:
     """
 
     def adminGetUsers(self, params):
-        data, err = [
-                        {
-                            "username": "walker",
-                            "chargeQuantity": 24,
-                            "waitingTime": 12345678
-                        }, {
-                            "username": "AutJ",
-                            "chargeQuantity": 32,
-                            "waitingTime": 23456781
-                        },
-                    ], None
+        data, err = [{
+            "username": "walker",
+            "chargeQuantity": 24,
+            "waitingTime": 12345678
+        }, {
+            "username": "AutJ",
+            "chargeQuantity": 32,
+            "waitingTime": 23456781
+        }], None
         return data, err
 
     """
@@ -120,30 +118,56 @@ class Service:
     """
 
     def adminGetTable(self, params):
-        data, err = {
-                        "time": "今日",
-                        "totalChargeCount": 30,
-                        "totalChargeTime": 99999999,
-                        "totalChargeQuantity": 320,
-                        "totalChargeCost": 1100,
-                        "totalServiceCost": 600,
-                        "totalCost": 1700,
-                        "chargers": [{
-                            "chargerID": 1,
-                            "totalChargeCount": 10,
-                            "totalChargeTime": 12345678,
-                            "totalChargeQuantity": 120,
-                            "totalChargeCost": 100,
-                            "totalServiceCost": 100,
-                            "totalCost": 200
-                        }, {
-                            "chargerID": 2,
-                            "totalChargeCount": 20,
-                            "totalChargeTime": 87654321,
-                            "totalChargeQuantity": 200,
-                            "totalChargeCost": 1000,
-                            "totalServiceCost": 500,
-                            "totalCost": 1500
-                        }, ]
-                    }, None
+        data, err = [{
+            "time": "今日",
+            "totalChargeCount": 30,
+            "totalChargeTime": 99999999,
+            "totalChargeQuantity": 320,
+            "totalChargeCost": 1100,
+            "totalServiceCost": 600,
+            "totalCost": 1700,
+            "chargers": [{
+                "chargerID": 1,
+                "totalChargeCount": 10,
+                "totalChargeTime": 12345678,
+                "totalChargeQuantity": 120,
+                "totalChargeCost": 100,
+                "totalServiceCost": 100,
+                "totalCost": 200
+            }, {
+                "chargerID": 2,
+                "totalChargeCount": 20,
+                "totalChargeTime": 87654321,
+                "totalChargeQuantity": 200,
+                "totalChargeCost": 1000,
+                "totalServiceCost": 500,
+                "totalCost": 1500
+            }]
+        }, {
+            "time": "本周",
+            "totalChargeCount": 30,
+            "totalChargeTime": 99999999,
+            "totalChargeQuantity": 320,
+            "totalChargeCost": 1100,
+            "totalServiceCost": 600,
+            "totalCost": 1700,
+            "chargers": [{
+                "chargerID": 1,
+                "totalChargeCount": 10,
+                "totalChargeTime": 12345678,
+                "totalChargeQuantity": 120,
+                "totalChargeCost": 100,
+                "totalServiceCost": 100,
+                "totalCost": 200
+            }, {
+                "chargerID": 2,
+                "totalChargeCount": 20,
+                "totalChargeTime": 87654321,
+                "totalChargeQuantity": 200,
+                "totalChargeCost": 1000,
+                "totalServiceCost": 500,
+                "totalCost": 1500
+            }]
+        }
+                    ], None
         return data, err
