@@ -1,7 +1,6 @@
 class Service:
-    def __init__(self, db, us):
+    def __init__(self, db):
         self.db = db
-        self.us = us
     """
     params
         username            用户名
