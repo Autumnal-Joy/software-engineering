@@ -95,8 +95,10 @@ class ChargeBoot:
     #开机，均摊
     def start(self):
         "here do nothing,wait for allocate"
+        self.ready_queue_lock.acquire()
         if self.rank not in self.ReadyQueue:
             self.ReadyQueue.append(self.rank)
+        self.ready_queue_lock.release()
     #关机，故障，其他均摊
     #将在队列中的拿出去
     #将队列中的全部拿出去
