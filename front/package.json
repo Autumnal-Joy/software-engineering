@@ -6,8 +6,8 @@
     "start": "tauri dev",
     "start-react": "cross-env BROWSER=none PORT=8080 react-scripts start",
     "build": "tauri build",
-    "build-react": "react-scripts build",
-    "build-sw": "cross-env BUILD_PATH='../software-engineering/build' react-scripts build",
+    "build-react": "cross-env react-scripts build",
+    "build-sw": "cross-env REACT_APP_TARGET=browser BUILD_PATH='../software-engineering/build' react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "tauri": "tauri"

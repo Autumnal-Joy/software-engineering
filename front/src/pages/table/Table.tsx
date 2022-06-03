@@ -1,6 +1,7 @@
 import { BackTop, Card, Collapse, Descriptions, List, message } from "antd";
 import React, { useEffect, useState } from "react";
-import { post } from "../../utils";
+import { useAuth } from "../../components/UserManager";
+import { post } from "../../utils/net";
 import Back from "../back/Back";
 import "./Table.css";
 
@@ -30,15 +31,18 @@ interface TableDataRes {
 
 function Table() {
   const [tableData, setTableData] = useState<TableData>();
+  const auth = useAuth();
+  const { username, password } = auth.userAuth;
+
   useEffect(() => {
-    post<TableDataRes>("adminGetTable", {})
+    post<TableDataRes>("adminGetTable", { username, password })
       .then(res => {
         setTableData(res.data);
       })
       .catch(e => {
         message.error({ content: e.message, key: "adminGetChargers" });
       });
-  }, []);
+  }, [password, username]);
 
   return (
     <>

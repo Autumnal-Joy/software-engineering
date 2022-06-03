@@ -11,66 +11,24 @@ import {
 } from "antd";
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { post } from "../../utils";
+import { useAuth } from "../../components/UserManager";
+import { post } from "../../utils/net";
 import Back from "../back/Back";
 import "./OrderInfo.css";
-
-function CancelChargeModel(props: {
-  visible: boolean;
-  setVisible: (visible: boolean) => void;
-}) {
-  const key = "cancelChargeModel";
-
-  const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
-
-  const cancelOrder = () => {
-    setLoading(true);
-
-    message.loading({
-      content: "处理中...",
-      duration: 0,
-      key,
-    });
-    post("userSendCancelCharge", {})
-      .then(() => {
-        message.success({ content: "取消成功", key });
-        props.setVisible(false);
-        setLoading(false);
-        navigate(-1);
-      })
-      .catch(e => {
-        setLoading(false);
-        message.error({ content: e, key });
-      });
-  };
-  return (
-    <Modal
-      cancelText="取消"
-      confirmLoading={loading}
-      okText="确认"
-      okType="danger"
-      onCancel={() => props.setVisible(false)}
-      onOk={cancelOrder}
-      title="确认取消预约吗？"
-      visible={props.visible}
-    >
-      一旦取消预约，则需要重新预约排号
-    </Modal>
-  );
-}
 
 function ModifyChargeModel(props: {
   chargeType?: "fast" | "slow";
   chargeQuantity?: number;
   visible: boolean;
   setVisible: (visible: boolean) => void;
+  setUpdate: () => void;
 }) {
   const key = "modifyChargeModel";
 
   const [loading, setLoading] = useState(false);
   const [form] = Form.useForm();
-  const navigate = useNavigate();
+  const auth = useAuth();
+  const { username, password } = auth.userAuth;
 
   const modifyOrder = () => {
     form
@@ -90,17 +48,23 @@ function ModifyChargeModel(props: {
           });
           let promise;
           if (values.chargeType !== props.chargeType) {
-            promise = post("userSendChargeType", values);
+            promise = post("userSendChargeType", {
+              username,
+              password,
+              ...values,
+            });
           } else {
             promise = post("userSendChargeQuantity", {
+              username,
+              password,
               chargeQuantity: values.chargeQuantity,
             });
           }
           promise
             .then(() => {
-              message.success({ content: "修改成功", key }).then(() => {
-                navigate(0);
-              });
+              message
+                .success({ content: "修改成功", key })
+                .then(props.setUpdate);
               props.setVisible(false);
               setLoading(false);
             })
@@ -112,15 +76,16 @@ function ModifyChargeModel(props: {
       })
       .catch(e => console.log(e));
   };
+
   return (
     <Modal
-      title="请修改充电类别或充电量"
-      okText="确认"
       cancelText="取消"
-      visible={props.visible}
-      onOk={modifyOrder}
       confirmLoading={loading}
+      okText="确认"
       onCancel={() => props.setVisible(false)}
+      onOk={modifyOrder}
+      title="请修改充电类别或充电量"
+      visible={props.visible}
     >
       <Form
         layout="vertical"
@@ -161,6 +126,53 @@ function ModifyChargeModel(props: {
   );
 }
 
+function CancelChargeModel(props: {
+  visible: boolean;
+  setVisible: (visible: boolean) => void;
+}) {
+  const key = "cancelChargeModel";
+
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const auth = useAuth();
+  const { username, password } = auth.userAuth;
+
+  const cancelOrder = () => {
+    setLoading(true);
+
+    message.loading({
+      content: "处理中...",
+      duration: 0,
+      key,
+    });
+    post("userSendCancelCharge", { username, password })
+      .then(() => {
+        message.success({ content: "取消成功", key });
+        props.setVisible(false);
+        setLoading(false);
+        navigate(-1);
+      })
+      .catch(e => {
+        setLoading(false);
+        message.error({ content: e, key });
+      });
+  };
+  return (
+    <Modal
+      cancelText="取消"
+      confirmLoading={loading}
+      okText="确认"
+      okType="danger"
+      onCancel={() => props.setVisible(false)}
+      onOk={cancelOrder}
+      title="确认取消预约吗？"
+      visible={props.visible}
+    >
+      一旦取消预约，则需要重新预约排号
+    </Modal>
+  );
+}
+
 interface Order {
   chargeType: "fast" | "slow";
   chargeQuantity: number;
@@ -187,32 +199,36 @@ interface RankRes {
 
 function OrderInfo() {
   const [order, setOrder] = useState<Order>();
+  const [update, setUpdate] = useState(false);
+  const auth = useAuth();
+  const { username, password } = auth.userAuth;
+
   useEffect(() => {
-    post<OrderRes>("userGetOrder", {})
+    post<OrderRes>("userGetOrder", { username, password })
       .then(res => {
         setOrder(res.data);
       })
       .catch(e => {
         message.error({ content: e.message, key: "userGetOrder" });
       });
-  }, []);
+  }, [password, username, update]);
 
   const [lineNo, setLineNo] = useState("");
   useEffect(() => {
-    post<LineNoRes>("userGetLineNo", {})
+    post<LineNoRes>("userGetLineNo", { username, password })
       .then(res => {
         setLineNo(res.data.lineNo);
       })
       .catch(e => {
         message.error({ content: e.message, key: "userGetOrder" });
       });
-  }, []);
+  }, [password, username, update]);
 
   const [rank, setRank] = useState(-1);
   const [endingTime, setEndingTime] = useState(-1);
   useEffect(() => {
     const getRank = () => {
-      post<RankRes>("userGetRank", {})
+      post<RankRes>("userGetRank", { username, password })
         .then(res => {
           setRank(res.data.rank);
           setEndingTime(res.data.endingTime);
@@ -228,21 +244,24 @@ function OrderInfo() {
     return () => {
       clearInterval(timer);
     };
-  }, []);
+  }, [password, username, update]);
 
   const [cancelOrderVisible, setCancelOrderVisible] = useState(false);
   const [modifyOrderVisible, setModifyOrderVisible] = useState(false);
 
   return (
     <>
-      <CancelChargeModel
-        visible={cancelOrderVisible}
-        setVisible={setCancelOrderVisible}
-      />
       <ModifyChargeModel
         {...order}
         visible={modifyOrderVisible}
         setVisible={setModifyOrderVisible}
+        setUpdate={() => {
+          setUpdate(update => !update);
+        }}
+      />
+      <CancelChargeModel
+        visible={cancelOrderVisible}
+        setVisible={setCancelOrderVisible}
       />
 
       <Back title="查看当前预约" />

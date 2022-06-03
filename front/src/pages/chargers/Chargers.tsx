@@ -11,7 +11,8 @@ import {
   Switch,
 } from "antd";
 import React, { useEffect, useState } from "react";
-import { post } from "../../utils";
+import { useAuth } from "../../components/UserManager";
+import { post } from "../../utils/net";
 import Back from "../back/Back";
 import "./Chargers.css";
 
@@ -32,15 +33,19 @@ function UsersDraw(props: {
   onClose: () => void;
 }) {
   const [usersInfo, setUsersInfo] = useState<UsersInfo>([]);
+  const auth = useAuth();
+  const { username, password } = auth.userAuth;
 
   useEffect(() => {
     props.chargerID &&
       post<UsersInfoRes>("adminGetUsers", {
+        username,
+        password,
         chargerID: props.chargerID.toString(),
       }).then(res => {
         setUsersInfo(res.data);
       });
-  }, [props.chargerID]);
+  }, [password, props.chargerID, username]);
 
   return (
     <Drawer
@@ -96,9 +101,11 @@ interface ChargersRes {
 function Chargers() {
   const [chargers, setChargers] = useState<Chargers>();
   const [loadings, setLoadings] = useState<Record<number, boolean>>({});
+  const auth = useAuth();
+  const { username, password } = auth.userAuth;
 
   function updateChargers() {
-    post<ChargersRes>("adminGetChargers", {})
+    post<ChargersRes>("adminGetChargers", { username, password })
       .then(res => {
         setChargers(res.data);
       })
@@ -107,7 +114,7 @@ function Chargers() {
       });
   }
 
-  useEffect(updateChargers, []);
+  useEffect(updateChargers, [password, username]);
 
   function turnCharger(chargerID: number, turn: boolean) {
     setLoadings(loadings => {
@@ -115,6 +122,8 @@ function Chargers() {
       return loadings;
     });
     post<ChargersRes>("adminTurnCharger", {
+      username,
+      password,
       chargerID,
       turn: turn ? "on" : "off",
     })

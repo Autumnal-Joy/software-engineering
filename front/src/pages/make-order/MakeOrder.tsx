@@ -1,20 +1,24 @@
 import { Button, Card, Form, InputNumber, message, Radio } from "antd";
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { post } from "../../utils";
+import { useAuth } from "../../components/UserManager";
+import { post } from "../../utils/net";
 import Back from "../back/Back";
 import "./MakeOrder.css";
 
 function Order() {
-  const navigate = useNavigate();
   const key = "loading";
+
+  const navigate = useNavigate();
+  const auth = useAuth();
+  const { username, password } = auth.userAuth;
 
   function onFinish(values: {
     chargeQuantity: number;
     chargeType: "fast" | "slow";
   }) {
     message.loading({ content: "处理中...", duration: 0, key });
-    post("userSendOrder", values)
+    post("userSendOrder", { username, password, ...values })
       .then(() => {
         message.success({ content: "预约成功", key });
         navigate(-1);

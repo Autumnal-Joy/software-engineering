@@ -1,15 +1,17 @@
 import { Button, Card, PageHeader, Space } from "antd";
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
-import "./User.css";
+import { useAuth } from "../../components/UserManager";
+import "./Admin.css";
 
-function User() {
-  const username = window.localStorage.getItem("username") || "未登录";
+function Admin() {
+  const auth = useAuth();
+
+  const { username } = auth.userAuth;
   const navitage = useNavigate();
 
   function logout() {
-    window.localStorage.removeItem("username");
-    window.localStorage.removeItem("password");
+    auth.delete();
     navitage("/");
   }
 
@@ -28,18 +30,16 @@ function User() {
             </Button>
           }
         />
+
         <Card>
-          <Link to="make-order">预约排号</Link>
+          <Link to="chargers">查看充电桩</Link>
         </Card>
         <Card>
-          <Link to="order-info">查看当前预约</Link>
-        </Card>
-        <Card>
-          <Link to="bills">查看充电详单</Link>
+          <Link to="table">查看报表</Link>
         </Card>
       </Space>
     </>
   );
 }
 
-export default User;
+export default Admin;

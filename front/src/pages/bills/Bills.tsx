@@ -1,6 +1,7 @@
 import { BackTop, Card, Descriptions, Drawer, List, message } from "antd";
 import React, { useEffect, useState } from "react";
-import { post } from "../../utils";
+import { useAuth } from "../../components/UserManager";
+import { post } from "../../utils/net";
 import Back from "../back/Back";
 import "./Bills.css";
 
@@ -28,13 +29,19 @@ function BillDraw(props: {
   onClose: () => void;
 }) {
   const [billInfo, setBillInfo] = useState({} as BillInfo);
+  const auth = useAuth();
+  const { username, password } = auth.userAuth;
 
   useEffect(() => {
     props.billID &&
-      post<BillInfoRes>("userGetBill", { billID: props.billID }).then(res => {
+      post<BillInfoRes>("userGetBill", {
+        username,
+        password,
+        billID: props.billID,
+      }).then(res => {
         setBillInfo(res.data);
       });
-  }, [props.billID]);
+  }, [password, props.billID, username]);
 
   return (
     <Drawer
@@ -91,16 +98,18 @@ interface BillsListRes {
 
 function Bills() {
   const [billList, setBillList] = useState([] as BillsList);
+  const auth = useAuth();
+  const { username, password } = auth.userAuth;
 
   useEffect(() => {
-    post<BillsListRes>("userGetBillsList", {})
+    post<BillsListRes>("userGetBillsList", { username, password })
       .then(res => {
         setBillList(res.data);
       })
       .catch(e => {
         message.error({ content: e.message, key: "userGetOrder" });
       });
-  }, []);
+  }, [password, username]);
 
   const [billDrawVisible, setBillDrawVisible] = useState(false);
   const [billID, setBillID] = useState(0);

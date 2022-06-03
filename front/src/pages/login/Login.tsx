@@ -1,10 +1,11 @@
 import { LockOutlined, UserOutlined } from "@ant-design/icons";
-import { Button, Card, Form, Input, message, PageHeader } from "antd";
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { post } from "../../utils";
-import "./Login.css";
+import { Button, Card, Checkbox, Form, Input, message, PageHeader } from "antd";
 import CryptoJS from "crypto-js";
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../components/UserManager";
+import { post } from "../../utils/net";
+import "./Login.css";
 
 const tabListNoTitle = [
   {
@@ -22,24 +23,53 @@ const tabListNoTitle = [
 ];
 
 function Login() {
-  const [cardkey, setCardkey] = useState("userLogin");
-  const navigate = useNavigate();
   const key = "loading";
 
-  const onFinish = (values: { username: string; password: string }) => {
+  const [cardkey, setCardkey] = useState("userLogin");
+  const navigate = useNavigate();
+  const auth = useAuth();
+
+  useEffect(() => {
+    const { username, password, role } = auth.userAuth;
+    if (!username) return;
+
+    let [method, route] = ["userLogin", "/user"];
+    if (role === "admin") {
+      method = "adminLogin";
+      route = "/admin";
+    }
+    post(method, {
+      username: username,
+      password: password,
+    })
+      .then(() => {
+        navigate(route);
+      })
+      .catch(() => {
+        return;
+      });
+  }, [auth.userAuth, navigate]);
+
+  const onFinish = (values: {
+    username: string;
+    password: string;
+    remember: boolean;
+  }) => {
     message.loading({ content: "处理中...", duration: 0, key });
-    const { username, password: rawPassword } = values;
+
+    const { username, password: rawPassword, remember } = values;
     const password = CryptoJS.MD5(rawPassword).toString();
+
     post(cardkey, { username, password })
       .then(() => {
         let route;
         if (cardkey === "adminLogin") {
           route = "/admin";
+          auth.save({ username, password, role: "admin" }, remember);
         } else {
           route = "/user";
+          auth.save({ username, password, role: "user" }, remember);
         }
-        window.localStorage.setItem("username", username);
-        window.localStorage.setItem("password", password);
         message.success({ content: "登录成功", key });
         navigate(route);
       })
@@ -75,7 +105,9 @@ function Login() {
           >
             <Input.Password prefix={<LockOutlined />} placeholder="密码" />
           </Form.Item>
-
+          <Form.Item name="remember" valuePropName="checked">
+            <Checkbox>记住我</Checkbox>
+          </Form.Item>
           <Form.Item>
             <Button type="primary" htmlType="submit">
               确认
