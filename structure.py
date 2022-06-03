@@ -43,7 +43,7 @@ class Order:
         print("aimed_end_time", intTodatetime(int(self.aimed_end_time * 1000)) if self.aimed_end_time else "未加入服务队列")
 
 
-id = 0
+id = 1
 
 
 class Bill:
@@ -52,7 +52,7 @@ class Bill:
         self.BillID = id
         id = id + 1
         self.chargeID = order.chargeID
-        self.billTime = time.time()
+        self.billTime = time.time() * 1000
         self.username = order.username
         self.charge_type = order.chargeType
         self.aimed_quantity = order.chargeQuantity
@@ -61,8 +61,8 @@ class Bill:
             30 if order.chargeType == 'fast' else 10) if canceled else order.chargeQuantity
         self.start_tm = intTodatetime(int(order.begin * 1000))
         self.end_tm = intTodatetime(int(order.end * 1000))
-        self.start = order.begin
-        self.end = order.end
+        self.start = order.begin * 1000
+        self.end = order.end * 1000
         self.chargecost, self.servecost = self.Calc()
         self.aimed_end_time = intTodatetime(int(order.aimed_end_time * 1000))
         self.Show()
@@ -82,7 +82,9 @@ class Bill:
         print("end_tm:", self.end_tm)
         print("aimed_end_time", self.aimed_end_time)
         print("cost = ", self.chargecost, self.servecost)
-
+        print("start",self.start)
+        print("end",self.end)
+        print("chargeID",self.chargeID)
 
 class ChargeBoot:
     def __init__(self, M: int, type: str, speed: int, rank: int, ReadyQueue: list, ready_queue_lock, Schedule, usr2bill,
@@ -138,7 +140,7 @@ class ChargeBoot:
 
     # 添加订单 外面控制了是否满 因此这里没必要控制
     def add(self, order: Order):
-        order.aimed_end_time = time.time() + self.CalcRealWaittime() + order.chargeQuantity / self.Charge_Speed
+        order.aimed_end_time = (time.time() + self.CalcRealWaittime() + order.chargeQuantity / self.Charge_Speed) * 1000
         self.totalwait += order.chargeQuantity / self.Charge_Speed
         self.ServeQueue.push(order)
         if self.busy is False:

@@ -162,6 +162,7 @@ def resp():
         except AttributeError:
             err = MethodNotFound
 
+    print("result:",result,"error:",err)
     if err is None:
         return SuccessTemplate(result)
     else:

@@ -248,7 +248,10 @@ class Service:
         else:
             if self.waitqueue.delord(username) is False:  # 订单刚刚调度到服务队列去
                 return self.userSendCancelCharge(username)
-        del self.usr2ord[username]
+            else:
+                print(username)
+                print(self.usr2ord)
+                del self.usr2ord[username]
         return data, err
 
     """ 
@@ -308,6 +311,7 @@ class Service:
                 break
         else:
             data, err = None, "该用户没有该billID的账单"
+            print(data)
         return data, err
 
     # 内部调度函数Schedule
