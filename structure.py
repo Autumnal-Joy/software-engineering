@@ -324,6 +324,12 @@ class WaitArea:
         if(self.Wait_Queue.push(order) == False):
             order.status = 'Declined'
             del self.usr2num[order.username]
+            if (order.chargeType == 'fast'):
+                self.fast_serial = self.fast_serial - 1
+                self.fast_order_in_wait = self.fast_order_in_wait - 1
+            else:
+                self.slow_serial = self.slow_serial - 1
+                self.slow_order_in_wait = self.slow_order_in_wait - 1
             self.mutex_wait_lock.release()
             return False
         self.mutex_wait_lock.release()
@@ -380,7 +386,7 @@ class WaitArea:
             return ans
         #在WaitQueue中找
         cur = self.Wait_Queue.head
-        while(cur != None and cur.order.chargeType != 'fast'):
+        while(cur != None and cur.order.chargeType != 'slow'):
             cur = cur.next
         if cur is None:return None
         ans = cur.order

@@ -233,6 +233,7 @@ class Service:
         data, err = {
                         "status": True
                     }, None
+        print("正在取消",username,"的订单:status:",self.usr2ord[username].status)
         if username not in self.usr2ord:
             data,err = None,"用户尚未预约"
         elif (self.usr2ord[username].status[0] == 'S'):
@@ -321,6 +322,7 @@ class Service:
         print("slow_ready",self.SlowReadyQueue)
         self.mutex_wait_lock.acquire()
         self.fast_ready_lock.acquire()
+        print("开始调度快队列",self.waitqueue.fast_order_in_wait)
         while(self.waitqueue.haswaitF() and len(self.FastReadyQueue)):
             order = self.waitqueue.fetch_first_fast_order()
             #找到waittotal最小的FastBoot
@@ -347,9 +349,11 @@ class Service:
                 del self.FastReadyQueue[sel]
         self.fast_ready_lock.release()
         self.slow_ready_lock.acquire()
+        print("开始调度慢队列",self.waitqueue.slow_order_in_wait)
         while(self.waitqueue.haswaitS() and len(self.SlowReadyQueue)):
             order = self.waitqueue.fetch_first_slow_order()
             if order is None:
+                print("order get failed",self.waitqueue.slow_order_in_wait)
                 break #为了互斥锁
             # 找到waittotal最小的FastBoot
             sel = 0
@@ -363,7 +367,7 @@ class Service:
             for i in range(0,len(self.SlowReadyQueue)):
                 if(Totalwait[i] < Totalwait[sel]):
                     sel = i
-            order.status = "T" + str(self.SlowReadyQueue[sel])
+            order.status = "S_T" + str(self.SlowReadyQueue[sel])
             order.chargeID = 'T' + str(self.SlowReadyQueue[sel])
             print("调度成功，将订单(username:{},chargetype:{},chargeQuantity:{})加入了充电桩T{}的服务队列...".format(order.username,order.chargeType,order.chargeQuantity,self.SlowReadyQueue[sel]))
             self.SlowBoot[self.SlowReadyQueue[sel]].add(order)
