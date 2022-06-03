@@ -3,7 +3,8 @@ class DB:
         pass
 
     def Query(self,tablename: str, key: str) -> dict:
-        return {"username": "郭阳", "password": "123456"}
+        # 前端测试密码为: 123456, 此处是MD5加密
+        return {"username": "user", "password": "e10adc3949ba59abbe56e057f20f883e"}
 
     def Insert(self,tablename: str, key: str, val: dict) -> bool:
         return True
