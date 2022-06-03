@@ -12,7 +12,7 @@ class Service:
         
     """
 
-    def adminLogin(self, params):
+    def adminLogin(self, username, password):
         # data, err = None, "用户不存在"
         data, err = {
                         "status": True
@@ -31,7 +31,7 @@ class Service:
         totalChargeQuantity 系统启动后充电桩总计充电量（度）
     """
 
-    def adminGetChargers(self, params):
+    def adminGetChargers(self, username):
         data, err = [{
             "chargerID": 1,
             "working": True,
@@ -65,7 +65,7 @@ class Service:
     
     """
 
-    def adminTurnCharger(self, params):
+    def adminTurnCharger(self, username, chargerID, turn):
         data, err = {
                         "status": True
                     }, None
@@ -82,7 +82,7 @@ class Service:
         waitingTime         用户等待时间（毫秒时间戳）
     """
 
-    def adminGetUsers(self, params):
+    def adminGetUsers(self, username, chargerID):
         data, err = [{
             "username": "walker",
             "chargeQuantity": 24,
@@ -117,7 +117,7 @@ class Service:
         }
     """
 
-    def adminGetTable(self, params):
+    def adminGetTable(self, username):
         data, err = [{
             "time": "今日",
             "totalChargeCount": 30,
