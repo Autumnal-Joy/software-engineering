@@ -33,16 +33,19 @@ class Service:
 
     def adminGetChargers(self, params):
         data, err = [{
+            "chargerID": 1,
             "working": True,
             "totalChargeCount": 30,
             "totalChargeTime": 123456789,
             "totalChargeQuantity": 120
         }, {
+            "chargerID": 2,
             "working": False,
             "totalChargeCount": 12,
             "totalChargeTime": 123456789,
             "totalChargeQuantity": 120
         }, {
+            "chargerID": 3,
             "working": False,
             "totalChargeCount": 0,
             "totalChargeTime": 0,
@@ -84,8 +87,12 @@ class Service:
                         {
                             "username": "walker",
                             "chargeQuantity": 24,
-                            "waitTime": 12345678
-                        }
+                            "waitingTime": 12345678
+                        }, {
+                            "username": "AutJ",
+                            "chargeQuantity": 32,
+                            "waitingTime": 23456781
+                        },
                     ], None
         return data, err
 
