@@ -1,3 +1,4 @@
+import threading
 from threading import Timer
 import time
 import datetime
@@ -77,7 +78,7 @@ class Bill:
         print("cost = ",self.chargecost,self.servecost)
 
 class ChargeBoot:
-    def __init__(self,M:int,type:str,speed:int,rank:int,ReadyQueue:list,Schedule,usr2bill,usr2ord):
+    def __init__(self,M:int,type:str,speed:int,rank:int,ReadyQueue:list,ready_queue_lock,Schedule,usr2bill,usr2ord):
         self.volumn = M
         self.ServeQueue = Queue(M)
         self.timers = {} #username->{定时器句柄的字典,starttime}
@@ -86,6 +87,7 @@ class ChargeBoot:
         self.busy = 0
         self.usr2bill = usr2bill
         self.ReadyQueue = ReadyQueue
+        self.ready_queue_lock = ready_queue_lock
         self.type = type
         self.rank = rank
         self.Schedule = Schedule
@@ -100,9 +102,11 @@ class ChargeBoot:
     #将队列中的全部拿出去
     def shut(self)->list:
         #从ReadyQueue中删除
+        self.ready_queue_lock.acquire()
         for i in range(0,self.ReadyQueue):
             if(self.ReadyQueue[i] == self.rank):
                 del self.ReadyQueue[i]
+        self.ready_queue_lock.release()
         ans = []
         if(self.busy):
             head = self.ServeQueue.pop()
@@ -155,8 +159,10 @@ class ChargeBoot:
         del self.usr2ord[ord.username]
         #继续服务下一个订单
         self.consume()
+        self.ready_queue_lock.acquire()
         if(self.rank not in self.ReadyQueue):
             self.ReadyQueue.append(self.rank)
+        self.ready_queue_lock.release()
         self.Schedule()
     #删除订单
     def delord(self, username):
@@ -173,6 +179,7 @@ class ChargeBoot:
         top = self.ServeQueue.peek()
         if(top == None): return self.totalwait
         return self.totalwait - (time.time() - self.timers[top.username][1])
+    #用于debug
     def witness(self):
         print("volumn:",self.M)
         print("ServeQueue:")
@@ -208,6 +215,7 @@ class Queue:
         self.size = 0
         self.volumn = N
         self.ord2idx = {}
+        #self.mutex = threading.Lock() #互斥锁，防止定时器回调函数脏数据
     #添加元素(从队列尾)
     def push(self,order:Order):
         if(self.size == self.volumn):
@@ -259,7 +267,7 @@ class Queue:
         return True
 
 class WaitArea:
-    def __init__(self,n:int):
+    def __init__(self,n:int,mutex_wait_lock):
         self.EN = n*n #排队队列中的订单假定最多不会超过n*n
         self.N = n
         self.emergency_fast_queue = Queue(self.EN)
@@ -272,6 +280,7 @@ class WaitArea:
         self.slow_serial = 1
         self.fast_order_in_wait = 0
         self.slow_order_in_wait = 0
+        self.mutex_wait_lock = mutex_wait_lock
     def getCarBeforenum(self,username:str):
         if username not in self.usr2num:
             return -1
@@ -300,6 +309,7 @@ class WaitArea:
         return -1
     # 将Order加入等待队列
     def addord(self,order: Order):
+        self.mutex_wait_lock.acquire()
         if (order.chargeType == 'fast'):
             order.serialnum = 'F' + str(self.fast_serial)
             self.usr2num[order.username] = ('Wait',"")
@@ -313,7 +323,10 @@ class WaitArea:
         order.status = "Wait"
         if(self.Wait_Queue.push(order) == False):
             order.status = 'Declined'
+            del self.usr2num[order.username]
+            self.mutex_wait_lock.release()
             return False
+        self.mutex_wait_lock.release()
         return True
     def emegency_add_f(self,order:Order):
         order.status = "emergency_wait_fast_queue"
@@ -323,6 +336,10 @@ class WaitArea:
         self.emergency_slow_queue.push(order)
     #删除订单
     def delord(self,username):
+        self.mutex_wait_lock.acquire()
+        if username not in self.usr2num:
+            self.mutex_wait_lock.release()
+            return False
         if(self.usr2num[username][0] == "EF"):
             del self.usr2num[username]
             self.emergency_fast_queue.cancel(username)
@@ -337,7 +354,9 @@ class WaitArea:
             del self.usr2num[username]
             self.Wait_Queue.cancel(username)
         else:
+            self.mutex_wait_lock.release()
             return False
+        self.mutex_wait_lock.release()
         return True
     def fetch_first_fast_order(self)->Order:
         ans = self.emergency_fast_queue.pop()

@@ -1,5 +1,7 @@
 import json,time
 import sys
+import threading
+
 sys.path.append("..")
 from structure import  Order
 from structure import WaitArea
@@ -20,11 +22,14 @@ class Service:
         self.usr2ord = {}  #username->Order
         self.usr2bill = {} #username->[Bill]
         self.N = N         #WaitQueueLen
-        self.waitqueue = WaitArea(self.N)
+        self.mutex_wait_lock = threading.Lock()
+        self.waitqueue = WaitArea(self.N,self.mutex_wait_lock)
+        self.fast_ready_lock = threading.Lock()
+        self.slow_ready_lock = threading.Lock()
         self.FastReadyQueue = [i for i in range(0,FPN)]
         self.SlowReadyQueue = [i for i in range(0,TPN)]
-        self.FastBoot = [ChargeBoot(M,'F',30,i,self.FastReadyQueue,self.Schedule,self.usr2bill,self.usr2ord) for i in range(0,FPN)]
-        self.SlowBoot = [ChargeBoot(M,'T',10,i,self.SlowReadyQueue,self.Schedule,self.usr2bill,self.usr2ord) for i in range(0,TPN)]
+        self.FastBoot = [ChargeBoot(M,'F',30,i,self.FastReadyQueue,self.fast_ready_lock,self.Schedule,self.usr2bill,self.usr2ord) for i in range(0,FPN)]
+        self.SlowBoot = [ChargeBoot(M,'T',10,i,self.SlowReadyQueue,self.slow_ready_lock,self.Schedule,self.usr2bill,self.usr2ord) for i in range(0,TPN)]
     """ 
     params
         username            用户名
@@ -234,13 +239,16 @@ class Service:
             if (self.usr2ord[username].status[2] == 'F'):
                 rank = int(self.usr2ord[username].status[3:])
                 # 快充的删除
-                return self.FastBoot[rank].delord(username)
+                if(self.FastBoot[rank].delord(username) == False):
+                    data,err = None,"订单已结束"
             else:
                 rank = int(self.usr2ord[username].status[3:])
                 # 慢充的删除
-                return self.SlowBoot[rank].delord(username)
+                if(self.SlowBoot[rank].delord(username) == False):
+                    data,err = None,"订单已结束"
         else:
-            return self.waitqueue.delord(username)
+            if(self.waitqueue.delord(username) == False):#订单刚刚调度到服务队列去
+                return self.userSendCancelCharge(username)
         return data, err
 
     """ 
@@ -307,10 +315,12 @@ class Service:
         return data, err
     #内部调度函数Schedule
     def Schedule(self):
-        #print("准备调度")
-        #print(self.waitqueue.usr2num)
-        #print("fast_ready",self.FastReadyQueue)
-        #print("slow_ready",self.SlowReadyQueue)
+        print("准备调度")
+        print("size:",self.waitqueue.Wait_Queue.size,self.waitqueue.usr2num)
+        print("fast_ready",self.FastReadyQueue)
+        print("slow_ready",self.SlowReadyQueue)
+        self.mutex_wait_lock.acquire()
+        self.fast_ready_lock.acquire()
         while(self.waitqueue.haswaitF() and len(self.FastReadyQueue)):
             order = self.waitqueue.fetch_first_fast_order()
             #找到waittotal最小的FastBoot
@@ -335,6 +345,8 @@ class Service:
             #检测如果充电桩满了就删除
             if(self.FastBoot[self.FastReadyQueue[sel]].isFull()):
                 del self.FastReadyQueue[sel]
+        self.fast_ready_lock.release()
+        self.slow_ready_lock.acquire()
         while(self.waitqueue.haswaitS() and len(self.SlowReadyQueue)):
             order = self.waitqueue.fetch_first_slow_order()
             if order is None:
@@ -357,3 +369,5 @@ class Service:
             self.SlowBoot[self.SlowReadyQueue[sel]].add(order)
             if (self.SlowBoot[self.SlowReadyQueue[sel]].isFull()):
                 del self.SlowReadyQueue[sel]
+        self.slow_ready_lock.release()
+        self.mutex_wait_lock.release()
