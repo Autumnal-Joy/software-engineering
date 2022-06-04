@@ -301,7 +301,7 @@ class Service:
                     "endTime": x.end,
                     "chargeCost": x.chargecost,
                     "serviceCost": x.servecost,
-                    "cost": x.chargecost + x.servecost
+                    "cost": x.totalcost
                 }
                 break
         else:

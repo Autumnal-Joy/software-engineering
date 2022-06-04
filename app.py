@@ -114,7 +114,7 @@ def userCheck(username, password):
 '''
 
 db = db.DB("data.db")
-pd = st.PublicDataStruct()
+pd = st.PublicDataStruct(db)
 userService = us.Service(db,pd)
 adminService = ms.Service(db,pd)
 
