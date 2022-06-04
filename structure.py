@@ -1,7 +1,11 @@
 from threading import Timer
 import time
 import datetime
+import json
+import threading
 
+FAST_SPEED = 0
+SLOW_SPEED = 0
 
 def intTodatetime(intValue):
     if len(str(intValue)) == 10:  # 精确到秒
@@ -58,13 +62,13 @@ class Bill:
         self.aimed_quantity = order.chargeQuantity
         # print(order.end,order.begin)
         self.real_quantity = (order.end - order.begin) * (
-            30 if order.chargeType == 'fast' else 10) if canceled else order.chargeQuantity
+            FAST_SPEED if order.chargeType == 'fast' else SLOW_SPEED) if canceled else order.chargeQuantity
         self.start_tm = intTodatetime(int(order.begin * 1000))
         self.end_tm = intTodatetime(int(order.end * 1000))
         self.start = order.begin * 1000
         self.end = order.end * 1000
         self.chargecost, self.servecost = self.Calc()
-        self.aimed_end_time = intTodatetime(int(order.aimed_end_time * 1000))
+        self.aimed_end_time = intTodatetime(int(order.aimed_end_time))
         self.Show()
 
     # 计算费用
@@ -470,3 +474,102 @@ class WaitArea:
             print(i, ":", self.usr2num[i])
         print("fast_serial:", self.fast_serial)
         print("slow_serial:", self.slow_serial)
+
+
+class PublicDataStruct:
+    def __init__(self):
+        global FAST_SPEED,SLOW_SPEED
+        with open("./config.json", encoding='utf-8') as f:
+            data = json.load(f)
+        self.N, self.M, self.FPN, self.TPN = data['WSZ'], data['CQL'], data['FPN'], data['TPN']
+        FAST_SPEED = data['FAST_SPEED']
+        SLOW_SPEED = data['SLOW_SPEED']
+        #FAST_SPEED和SLOW_SPEED用于structure的其他类
+        #self.Fast_Speed和self.Slow_Speed用于user.Service和admin.Service作为参数传递
+        self.Fast_Speed = FAST_SPEED
+        self.Slow_Speed = SLOW_SPEED
+        self.usr2ord = {}  # username->Order
+        self.usr2bill = {}  # username->[Bill]
+        self.mutex_wait_lock = threading.Lock()
+        self.waitqueue = WaitArea(self.N, self.mutex_wait_lock)
+        self.fast_ready_lock = threading.Lock()
+        self.slow_ready_lock = threading.Lock()
+        self.FastReadyQueue = [i for i in range(0, self.FPN)]
+        self.SlowReadyQueue = [i for i in range(0, self.TPN)]
+        self.FastBoot = [
+            ChargeBoot(self.M, 'F', FAST_SPEED, i, self.FastReadyQueue, self.fast_ready_lock, self.Schedule,
+                       self.usr2bill,
+                       self.usr2ord) for i in range(0, self.FPN)]
+        self.SlowBoot = [
+            ChargeBoot(self.M, 'T', SLOW_SPEED, i, self.SlowReadyQueue, self.slow_ready_lock, self.Schedule,
+                       self.usr2bill,
+                       self.usr2ord) for i in range(0, self.TPN)]
+
+    # 内部调度函数Schedule
+    def Schedule(self):
+        print("准备调度")
+        print("size:", self.waitqueue.Wait_Queue.size, self.waitqueue.usr2num)
+        print("fast_ready", self.FastReadyQueue)
+        print("slow_ready", self.SlowReadyQueue)
+        self.mutex_wait_lock.acquire()
+        self.fast_ready_lock.acquire()
+        print("开始调度快队列", self.waitqueue.fast_order_in_wait)
+        while self.waitqueue.haswaitF() and len(self.FastReadyQueue):
+            order = self.waitqueue.fetch_first_fast_order()
+            # 找到waittotal最小的FastBoot
+            if order is None:
+                break  # 为了互斥锁
+            sel = 0
+            # 得到所有有空位同一时刻的FastBoot的实时totalwait
+            Totalwait = []
+            # 记录最开始的time
+            t1 = time.time()
+            for i in range(0, len(self.FastReadyQueue)):
+                Totalwait.append(
+                    max(0, self.FastBoot[self.FastReadyQueue[i]].CalcRealWaittime() + time.time() - t1))
+            print(Totalwait)
+            for i in range(1, len(self.FastReadyQueue)):
+                if Totalwait[i] < Totalwait[sel]:
+                    sel = i
+            order.status = "S_F" + str(self.FastReadyQueue[sel])
+            order.chargeID = 'F' + str(self.FastReadyQueue[sel])
+            print("调度成功，将订单(username:{},chargetype:{},chargeQuantity:{})加入了充电桩F{}的服务队列...".format(order.username,
+                                                                                                  order.chargeType,
+                                                                                                  order.chargeQuantity,
+                                                                                                  self.FastReadyQueue[
+                                                                                                      sel]))
+            self.FastBoot[self.FastReadyQueue[sel]].add(order)
+            # 检测如果充电桩满了就删除
+            if self.FastBoot[self.FastReadyQueue[sel]].isFull():
+                del self.FastReadyQueue[sel]
+        self.fast_ready_lock.release()
+        self.slow_ready_lock.acquire()
+        print("开始调度慢队列", self.waitqueue.slow_order_in_wait)
+        while self.waitqueue.haswaitS() and len(self.SlowReadyQueue):
+            order = self.waitqueue.fetch_first_slow_order()
+            if order is None:
+                break  # 为了互斥锁
+            # 找到waittotal最小的FastBoot
+            sel = 0
+            # 得到所有有空位同一时刻的SlowBoot的实时totalwait
+            Totalwait = []
+            # 记录最开始的time
+            t1 = time.time()
+            for i in range(0, len(self.SlowReadyQueue)):
+                Totalwait.append(
+                    max(0, self.SlowBoot[self.SlowReadyQueue[i]].CalcRealWaittime() + time.time() - t1))
+            for i in range(0, len(self.SlowReadyQueue)):
+                if Totalwait[i] < Totalwait[sel]:
+                    sel = i
+            order.status = "S_T" + str(self.SlowReadyQueue[sel])
+            order.chargeID = 'T' + str(self.SlowReadyQueue[sel])
+            print("调度成功，将订单(username:{},chargetype:{},chargeQuantity:{})加入了充电桩T{}的服务队列...".format(order.username,
+                                                                                                  order.chargeType,
+                                                                                                  order.chargeQuantity,
+                                                                                                  self.SlowReadyQueue[
+                                                                                                      sel]))
+            self.SlowBoot[self.SlowReadyQueue[sel]].add(order)
+            if self.SlowBoot[self.SlowReadyQueue[sel]].isFull():
+                del self.SlowReadyQueue[sel]
+        self.slow_ready_lock.release()
+        self.mutex_wait_lock.release()

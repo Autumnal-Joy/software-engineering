@@ -9,7 +9,7 @@
 
 
 '''
-
+import structure as st
 import user.service as us
 import admin.service as ms
 import db.db as db
@@ -114,9 +114,9 @@ def userCheck(username, password):
 '''
 
 db = db.DB("data.db")
-userService = us.Service(db)
-adminService = ms.Service(db)
-
+pd = st.PublicDataStruct()
+userService = us.Service(db,pd)
+adminService = ms.Service(db,pd)
 
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
