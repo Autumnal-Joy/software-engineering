@@ -67,13 +67,15 @@ class Bill:
         self.end_tm = intTodatetime(int(order.end * 1000))
         self.start = order.begin * 1000
         self.end = order.end * 1000
-        self.chargecost, self.servecost = self.Calc()
+        self.chargecost, self.servecost = self.Calc(FAST_SPEED if order.chargeType == 'fast' else SLOW_SPEED)
         self.aimed_end_time = intTodatetime(int(order.aimed_end_time))
         self.Show()
 
     # 计算费用
-    def Calc(self):
-        return 1, 1
+    def Calc(self,ChargeType):
+        #因为速度恒定，所以只知道start_tm和end_tm可以求出
+
+        return 1, 0.8 * self.real_quantity
 
     def Show(self):
         print("生成了账单:")
@@ -238,6 +240,7 @@ class ListNode:
 
 class Queue:
     def __init__(self, N: int):
+        self.mutex = threading.Lock() #队列的锁，防止多线程同时调用多个函数造成链表损坏
         self.head = None
         self.tail = None
         self.size = 0
@@ -247,7 +250,9 @@ class Queue:
 
     # 添加元素(从队列尾)
     def push(self, order: Order):
+        self.mutex.acquire()
         if self.size == self.volumn:
+            self.mutex.release()
             return False
         new_node = ListNode(order)
         self.ord2idx[order.username] = new_node
@@ -255,16 +260,20 @@ class Queue:
             self.head = new_node
             self.tail = new_node
             self.size = 1
+            self.mutex.release()
             return True
         self.tail.next = new_node
         new_node.pre = self.tail
         self.tail = new_node
         self.size = self.size + 1
+        self.mutex.release()
         return True
 
     # 删除元素(从队列头)
     def pop(self):
+        self.mutex.acquire()
         if self.size == 0:
+            self.mutex.release()
             return None
         ans = self.head
         del self.ord2idx[ans.order.username]
@@ -274,15 +283,21 @@ class Queue:
         else:
             self.head = self.head.next
             self.head.pre = None
+        self.mutex.release()
         return ans.order
 
     # 查看第一个但是不删除
     def peek(self):
-        return self.head.order if self.size else None
+        self.mutex.acquire()
+        ret = self.head.order if self.size else None
+        self.mutex.release()
+        return ret
 
     # 删除元素(中间删除)
     def cancel(self, username: str):
+        self.mutex.acquire()
         if username not in self.ord2idx:
+            self.mutex.release()
             return False
         before = self.ord2idx[username].pre
         after = self.ord2idx[username].next
@@ -296,6 +311,7 @@ class Queue:
             self.head = after
         if after is None:
             self.tail = before
+        self.mutex.release()
         return True
 
 
