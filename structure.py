@@ -130,7 +130,7 @@ class Bill:
         print("start",self.start)
         print("end",self.end)
         print("chargeID",self.chargeID)
-        print("chargercost:",self.chargecost)
+        print("chargecost:",self.chargecost)
         print("servecost:",self.servecost)
 
 class ChargeBoot:

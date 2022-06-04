@@ -118,6 +118,7 @@ pd = st.PublicDataStruct(db)
 userService = us.Service(db,pd)
 adminService = ms.Service(db,pd)
 
+
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def catch_all(path):

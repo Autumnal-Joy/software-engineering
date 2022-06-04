@@ -1,16 +1,11 @@
 import sys
 sys.path.append("..")
-import json
-import time
-import threading
 from structure import Order
-from structure import WaitArea
-from structure import ChargeBoot
 
-FPN = 0  # FastCharingPileNum(FPN)        快充电桩数
-TPN = 0  # TrickleChargingPileNum(TPN)    慢充电桩数
-N = 0  # WaitingAreaSize(N)           等候区车位容量
-M = 0  # ChargingQueueLen(M)          充电桩排队队列长度
+# FastCharingPileNum(FPN)        快充电桩数
+# TrickleChargingPileNum(TPN)    慢充电桩数
+# WaitingAreaSize(N)           等候区车位容量
+# ChargingQueueLen(M)          充电桩排队队列长度
 
 
 class Service:
