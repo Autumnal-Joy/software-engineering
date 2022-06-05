@@ -7,6 +7,7 @@ import threading
 FAST_SPEED = 0
 SLOW_SPEED = 0
 
+
 def intTodatetime(intValue):
     intValue = int(intValue)
     if len(str(intValue)) == 10:  # 精确到秒
@@ -17,7 +18,7 @@ def intTodatetime(intValue):
         k = len(str(intValue)) - 10
         timetamp = datetime.datetime.fromtimestamp(intValue / (1 * 10 ** k))
         datetimeValue = timetamp.strftime("%Y-%m-%d %H:%M:%S.%f")
-        datetimeValue = datetimeValue[:datetimeValue.find('.')+4]
+        datetimeValue = datetimeValue[:datetimeValue.find('.') + 4]
     else:
         return -1
     return datetimeValue
@@ -31,10 +32,11 @@ class Order:
         self.serialnum = 0  # 序列号
         # Generating Wait EF ET S_Fi S_Ti Compelete
         self.status = "Generating"  # 订单状态
-        self.begin = 0 #时间戳，以s为单位
-        self.end = 0 #时间戳，以s为单位
-        self.aimed_end_time = 0 #时间戳，以ms为单位
+        self.begin = 0
+        self.end = 0
+        self.aimed_end_time = 0
         self.chargeID = 0  # 充电桩编号
+        self.createtime = time.time()  # 订单生成时间
 
     # 用于debug
     def show(self):
@@ -94,70 +96,78 @@ class Bill:
     # 为了存储，转换成dict
     def todict(self):
         ans = {
-            "BillID":self.BillID,
-            "chargeID":self.chargeID,
-            "billTime":self.billTime,
-            "username":self.username,
-            "charge_type":self.charge_type,
-            "aimed_quantity":self.aimed_quantity,
-            "real_quantity":self.real_quantity,
-            "start_tm":self.start_tm,
-            "end_tm":self.end_tm,
-            "start":self.start,
-            "end":self.end,
-            "chargecost":self.chargecost,
-            "servecost":self.servecost,
-            "totalcost":self.totalcost,
-            "aimed_end_time":self.aimed_end_time
+            "BillID": self.BillID,
+            "chargeID": self.chargeID,
+            "billTime": self.billTime,
+            "username": self.username,
+            "charge_type": self.charge_type,
+            "aimed_quantity": self.aimed_quantity,
+            "real_quantity": self.real_quantity,
+            "start_tm": self.start_tm,
+            "end_tm": self.end_tm,
+            "start": self.start,
+            "end": self.end,
+            "chargecost": self.chargecost,
+            "servecost": self.servecost,
+            "totalcost": self.totalcost,
+            "aimed_end_time": self.aimed_end_time
         }
-        return ans
-    # 计算费用
-    def Calc(self,ChargeSpeed):
-        #因为速度恒定，所以只知道start_tm和end_tm可以求出
-        #峰时(1.0元/度) (10:00-15:00 18:00-21:00)
-        #平时(0.7元/度) (7:00-10:00 15:00-18:00 21:00-23:00)
-        #谷时(0.4元/度) (23:00-次日7:00)
+        return
+
+        # 计算费用
+    def Calc(self, ChargeSpeed):
+        # 因为速度恒定，所以只知道start_tm和end_tm可以求出
+        # 峰时(1.0元/度) (10:00-15:00 18:00-21:00)
+        # 平时(0.7元/度) (7:00-10:00 15:00-18:00 21:00-23:00)
+        # 谷时(0.4元/度) (23:00-次日7:00)
         t1 = self.start_tm
-        start = list(map(int,t1.split(' ')[0].split('-'))) + list(map(int,t1.split(' ')[1].split('.')[0].split(':'))) + list(map(int,[t1.split(' ')[1].split('.')[1]]))
+        start = list(map(int, t1.split(' ')[0].split('-'))) + list(
+            map(int, t1.split(' ')[1].split('.')[0].split(':'))) + list(map(int, [t1.split(' ')[1].split('.')[1]]))
         t1 = self.end_tm
-        end = list(map(int,t1.split(' ')[0].split('-'))) + list(map(int,t1.split(' ')[1].split('.')[0].split(':'))) + list(map(int,[t1.split(' ')[1].split('.')[1]]))
-        #[year,month,day,hour,min,sec,msec]
-        #因为是连续的,所以提前算出一天的,
-        #最多一次100度 慢充10度/小时 最多10小时 不跨过一天
+        end = list(map(int, t1.split(' ')[0].split('-'))) + list(
+            map(int, t1.split(' ')[1].split('.')[0].split(':'))) + list(map(int, [t1.split(' ')[1].split('.')[1]]))
+        # [year,month,day,hour,min,sec,msec]
+        # 因为是连续的,所以提前算出一天的,
+        # 最多一次100度 慢充10度/小时 最多10小时 不跨过一天
         charge_cost = 0
-        time_point = [0,7,10,15,18,21,23,24]
-        fee = [0.3,0.7,1.0,0.7,1.0,0.7,0.3,0.3]
-        st = 0 #第一个大于start.hour的时间节点
-        for i in range(0,len(time_point)):
+        time_point = [0, 7, 10, 15, 18, 21, 23, 24]
+        fee = [0.3, 0.7, 1.0, 0.7, 1.0, 0.7, 0.3, 0.3]
+        st = 0  # 第一个大于start.hour的时间节点
+        for i in range(0, len(time_point)):
             if time_point[i] > start[3]:
                 st = i
                 break
-        ed = 0 #最后一个小于end.hour的时间节点
+        ed = 0  # 最后一个小于end.hour的时间节点
         for i in range(0, len(time_point)):
             if time_point[i] > end[3]:
-                ed = (i-1) % len(time_point)
+                ed = (i - 1) % len(time_point)
                 break
-        #循环统计
+        # 循环统计
         day = start[2]
-        if(day != end[2] or st <= ed):
-            charge_cost += ((time_point[st] * 3600 - start[3] * 3600 - start[4] * 60 - start[5] - start[6] * 0.001) % (24 * 3600)) * ChargeSpeed * fee[(st-1) % len(fee)]
-            while(day != end[2] or st != ed):
-                charge_cost += (((time_point[(st+1)%len(time_point)] - time_point[st]) % 24) * 3600) * ChargeSpeed * fee[(st) % len(fee)]
+        if (day != end[2] or st <= ed):
+            charge_cost += ((time_point[st] * 3600 - start[3] * 3600 - start[4] * 60 - start[5] - start[6] * 0.001) % (
+                        24 * 3600)) * ChargeSpeed * fee[(st - 1) % len(fee)]
+            while (day != end[2] or st != ed):
+                charge_cost += (((time_point[(st + 1) % len(time_point)] - time_point[st]) % 24) * 3600) * ChargeSpeed * \
+                               fee[(st) % len(fee)]
                 st = st + 1
                 if st == len(time_point):
                     st = 0
                     day = day + 1
-            charge_cost += ((end[3] * 3600 + end[4] * 60 + end[5] + end[6] * 0.001 - time_point[ed] * 3600) % (24 * 3600)) * ChargeSpeed * fee[(ed) % len(fee)]
-        elif(st == ed + 1):
-            charge_cost += (end[3] * 3600 + end[4] * 60 + end[5] + end[6] * 0.001 - start[3] * 3600 - start[4] * 60 - start[5] - start[6] * 0.001) * ChargeSpeed * fee[(ed) % len(fee)]
+            charge_cost += ((end[3] * 3600 + end[4] * 60 + end[5] + end[6] * 0.001 - time_point[ed] * 3600) % (
+                        24 * 3600)) * ChargeSpeed * fee[(ed) % len(fee)]
+        elif (st == ed + 1):
+            charge_cost += (end[3] * 3600 + end[4] * 60 + end[5] + end[6] * 0.001 - start[3] * 3600 - start[4] * 60 -
+                            start[5] - start[6] * 0.001) * ChargeSpeed * fee[(ed) % len(fee)]
         else:
             print("Calc Error")
-        return round(charge_cost,2), round(0.8 * self.real_quantity,2)
+        return round(charge_cost, 2), round(0.8 * self.real_quantity, 2)
 
     def Show(self):
         print("生成了账单:")
         print("username = ", self.username)
         print("billID = ", self.BillID)
+        print("billTime = ", self.billTime)
         print("charge_type = ", self.charge_type)
         print("aimed_quantity = ", self.aimed_quantity)
         print("real_quantity = ", self.real_quantity)
@@ -165,15 +175,16 @@ class Bill:
         print("end_tm:", self.end_tm)
         print("aimed_end_time", self.aimed_end_time)
         print("cost = ", self.chargecost, self.servecost)
-        print("start",self.start)
-        print("end",self.end)
-        print("chargeID",self.chargeID)
-        print("chargecost:",self.chargecost)
-        print("servecost:",self.servecost)
+        print("start", self.start)
+        print("end", self.end)
+        print("chargeID", self.chargeID)
+        print("chargecost:", self.chargecost)
+        print("servecost:", self.servecost)
+
 
 class ChargeBoot:
     def __init__(self, M: int, type: str, speed: int, rank: int, ReadyQueue: list, ready_queue_lock, Schedule, usr2bill,
-                 usr2ord,db):
+                 usr2ord, db):
         self.db = db
         self.volumn = M
         self.ServeQueue = Queue(M)
@@ -201,15 +212,19 @@ class ChargeBoot:
             self.ReadyQueue.append(self.rank)
         self.ready_queue_lock.release()
         self.working = True
+
     # 关机，故障，其他均摊
     # 将在队列中的拿出去
     # 将队列中的全部拿出去
     def shut(self) -> list:
         # 从ReadyQueue中删除
         self.ready_queue_lock.acquire()
+        # xmx修改过#之前del self.ReadyQueue[i]长度减小导致i越界
+        del_cnt = 0
         for i in range(0, len(self.ReadyQueue)):
-            if self.ReadyQueue[i] == self.rank:
+            if self.ReadyQueue[i - del_cnt] == self.rank:
                 del self.ReadyQueue[i]
+                del_cnt = del_cnt + 1
         self.ready_queue_lock.release()
         ans = []
         if self.busy:
@@ -220,15 +235,15 @@ class ChargeBoot:
             if head.username in self.usr2bill:
                 bill = Bill(head, 1)
                 self.usr2bill[head.username].append(bill)
-                table = self.db.Query("ChargerBillList",self.name)
-                table[str(int(time.time())) + '_'+str(bill.BillID)] = bill.todict()
-                self.db.Update("ChargerBillList",self.name, table)
+                table = self.db.Query("ChargerBillList", self.name)
+                table[str(int(time.time())) + '_' + str(bill.BillID)] = bill
+                self.db.Update("ChargerBillList", self.name, table)
             else:
                 bill = Bill(head, 1)
                 self.usr2bill[head.username] = [bill]
                 table = self.db.Query("ChargerBillList", self.name)
-                table[str(int(time.time())) + '_' + str(bill.BillID)] = bill.todict()
-                self.db.Update("ChargerBillList",self.name, table)
+                table[str(int(time.time())) + '_' + str(bill.BillID)] = bill
+                self.db.Update("ChargerBillList", self.name, table)
             del self.timers[head.username]
             # 结算正在进行的
             ans.append(Order(head.username, head.chargeType,
@@ -273,14 +288,14 @@ class ChargeBoot:
             bill = Bill(ord, cancel)
             self.usr2bill[ord.username].append(bill)
             table = self.db.Query("ChargerBillList", self.name)
-            table[str(int(time.time())) + '_' + str(bill.BillID)] = bill.todict()
-            self.db.Update("ChargerBillList",self.name, table)
+            table[str(int(time.time())) + '_' + str(bill.BillID)] = bill
+            self.db.Update("ChargerBillList", self.name, table)
         else:
             bill = Bill(ord, cancel)
             self.usr2bill[ord.username] = [bill]
             table = self.db.Query("ChargerBillList", self.name)
-            table[str(int(time.time())) + '_' + str(bill.BillID)] = bill.todict()
-            self.db.Update("ChargerBillList",self.name, table)
+            table[str(int(time.time())) + '_' + str(bill.BillID)] = bill
+            self.db.Update("ChargerBillList", self.name, table)
         self.busy = False
         del self.timers[ord.username]
         del self.usr2ord[ord.username]
@@ -332,6 +347,7 @@ class ChargeBoot:
         for i in self.ReadyQueue:
             print(i, end='')
 
+
 class ListNode:
     def __init__(self, order: Order):
         self.order = order
@@ -341,7 +357,7 @@ class ListNode:
 
 class Queue:
     def __init__(self, N: int):
-        self.mutex = threading.Lock() #队列的锁，防止多线程同时调用多个函数造成链表损坏
+        self.mutex = threading.Lock()  # 队列的锁，防止多线程同时调用多个函数造成链表损坏
         self.head = None
         self.tail = None
         self.size = 0
@@ -419,11 +435,13 @@ class Queue:
         self.mutex.acquire()
         ret = []
         cur = self.head
-        while cur != None:
+        while cur is not None:
+            #print("***cur", cur)
             ret.append(cur.order)
             cur = cur.next
         self.mutex.release()
         return ret
+
 
 class WaitArea:
     def __init__(self, n: int, mutex_wait_lock):
@@ -603,15 +621,15 @@ class WaitArea:
 
 
 class PublicDataStruct:
-    def __init__(self,db):
-        global FAST_SPEED,SLOW_SPEED
+    def __init__(self, db):
+        global FAST_SPEED, SLOW_SPEED
         with open("./config.json", encoding='utf-8') as f:
             data = json.load(f)
         self.N, self.M, self.FPN, self.TPN = data['WSZ'], data['CQL'], data['FPN'], data['TPN']
         FAST_SPEED = data['FAST_SPEED']
         SLOW_SPEED = data['SLOW_SPEED']
-        #FAST_SPEED和SLOW_SPEED用于structure的其他类
-        #self.Fast_Speed和self.Slow_Speed用于user.Service和admin.Service作为参数传递
+        # FAST_SPEED和SLOW_SPEED用于structure的其他类
+        # self.Fast_Speed和self.Slow_Speed用于user.Service和admin.Service作为参数传递
         self.Fast_Speed = FAST_SPEED
         self.Slow_Speed = SLOW_SPEED
         self.usr2ord = {}  # username->Order
@@ -625,11 +643,11 @@ class PublicDataStruct:
         self.FastBoot = [
             ChargeBoot(self.M, 'F', FAST_SPEED, i, self.FastReadyQueue, self.fast_ready_lock, self.Schedule,
                        self.usr2bill,
-                       self.usr2ord,db) for i in range(0, self.FPN)]
+                       self.usr2ord, db) for i in range(0, self.FPN)]
         self.SlowBoot = [
             ChargeBoot(self.M, 'T', SLOW_SPEED, i, self.SlowReadyQueue, self.slow_ready_lock, self.Schedule,
                        self.usr2bill,
-                       self.usr2ord,db) for i in range(0, self.TPN)]
+                       self.usr2ord, db) for i in range(0, self.TPN)]
 
     # 内部调度函数Schedule
     def Schedule(self):
