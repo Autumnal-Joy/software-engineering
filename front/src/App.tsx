@@ -1,15 +1,14 @@
-import { Table } from "antd";
 import React, { StrictMode } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import {
   Admin,
   Bills,
-  Cars,
   Chargers,
   Login,
   MakeOrder,
   OrderInfo,
   User,
+  Table,
 } from "./pages";
 import { UserContextProvider } from "./components/UserManager";
 import { ProtectedRoute } from "./components/ProtectedRoute";
@@ -32,10 +31,7 @@ function App() {
               </Route>
               <Route path="/admin">
                 <Route index element={<Admin />} />
-                <Route path="chargers">
-                  <Route index element={<Chargers />} />
-                  <Route path=":chargerID" element={<Cars />} />
-                </Route>
+                <Route path="chargers" element={<Chargers />} />
                 <Route path="table" element={<Table />} />
               </Route>
               <Route path="*" />

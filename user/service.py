@@ -1,17 +1,19 @@
 import sys
+
 sys.path.append("..")
 from structure import Order
 
-# FastCharingPileNum(FPN)        快充电桩数
+
+# FastChargingPileNum(FPN)        快充电桩数
 # TrickleChargingPileNum(TPN)    慢充电桩数
 # WaitingAreaSize(N)           等候区车位容量
 # ChargingQueueLen(M)          充电桩排队队列长度
 
 
 class Service:
-    def __init__(self, db , pd):
+    def __init__(self, db, pd):
         self.db = db
-        self.N, self.M, self.FPN, self.TPN = pd.N,pd.M,pd.FPN,pd.TPN
+        self.N, self.M, self.FPN, self.TPN = pd.N, pd.M, pd.FPN, pd.TPN
         self.usr2ord = pd.usr2ord  # username->Order
         self.usr2bill = pd.usr2bill  # username->[Bill]
         self.mutex_wait_lock = pd.mutex_wait_lock

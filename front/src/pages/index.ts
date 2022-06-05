@@ -1,7 +1,6 @@
 export { default as Admin } from "./admin/Admin";
 export { default as Back } from "./back/Back";
 export { default as Bills } from "./bills/Bills";
-export { default as Cars } from "./cars/Cars";
 export { default as Chargers } from "./chargers/Chargers";
 export { default as Login } from "./login/Login";
 export { default as MakeOrder } from "./make-order/MakeOrder";

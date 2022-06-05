@@ -85,7 +85,7 @@ function UsersDraw(props: {
   );
 }
 
-type Chargers = {
+type ChargersList = {
   chargerID: number;
   working: boolean;
   totalChargeCount: number;
@@ -95,11 +95,11 @@ type Chargers = {
 
 interface ChargersRes {
   message: string;
-  data: Chargers;
+  data: ChargersList;
 }
 
 function Chargers() {
-  const [chargers, setChargers] = useState<Chargers>();
+  const [chargers, setChargers] = useState<ChargersList>();
   const [loadings, setLoadings] = useState<Record<number, boolean>>({});
   const auth = useAuth();
   const { username, password } = auth.userAuth;
