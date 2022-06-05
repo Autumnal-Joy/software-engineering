@@ -151,13 +151,18 @@ class ChargeBoot:
         self.Schedule = Schedule
         self.usr2ord = usr2ord
         self.name = type + str(rank)
+        self.working = True
+
+    def get_all_ord_now(self):
+        return self.ServeQueue.peek_all()
+
     # 开机，均摊
     def start(self):
         self.ready_queue_lock.acquire()
         if self.rank not in self.ReadyQueue:
             self.ReadyQueue.append(self.rank)
         self.ready_queue_lock.release()
-
+        self.working = True
     # 关机，故障，其他均摊
     # 将在队列中的拿出去
     # 将队列中的全部拿出去
@@ -192,6 +197,7 @@ class ChargeBoot:
                              head.chargeQuantity - (head.end - head.begin) * self.Charge_Speed))
         while self.ServeQueue.size:
             ans.append(self.ServeQueue.pop())
+        self.working = False
         return ans
 
     # 添加订单 外面控制了是否满 因此这里没必要控制
@@ -372,6 +378,14 @@ class Queue:
         self.mutex.release()
         return True
 
+    def peek_all(self):
+        self.mutex.acquire()
+        ret = []
+        cur = self.head
+        while cur != None:
+            ret.append(cur.order)
+        self.mutex.release()
+        return ret
 
 class WaitArea:
     def __init__(self, n: int, mutex_wait_lock):
