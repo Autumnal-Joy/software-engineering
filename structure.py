@@ -31,9 +31,9 @@ class Order:
         self.serialnum = 0  # 序列号
         # Generating Wait EF ET S_Fi S_Ti Compelete
         self.status = "Generating"  # 订单状态
-        self.begin = 0
-        self.end = 0
-        self.aimed_end_time = 0
+        self.begin = 0 #时间戳，以s为单位
+        self.end = 0 #时间戳，以s为单位
+        self.aimed_end_time = 0 #时间戳，以ms为单位
         self.chargeID = 0  # 充电桩编号
 
     # 用于debug
@@ -53,26 +53,64 @@ id = 1
 
 
 class Bill:
-    def __init__(self, order: Order, canceled=0):
-        global id
-        self.BillID = id
-        id = id + 1
-        self.chargeID = order.chargeID
-        self.billTime = time.time() * 1000
-        self.username = order.username
-        self.charge_type = order.chargeType
-        self.aimed_quantity = order.chargeQuantity
-        # print(order.end,order.begin)
-        self.real_quantity = round((order.end - order.begin) * (
-            FAST_SPEED if order.chargeType == 'fast' else SLOW_SPEED) if canceled else order.chargeQuantity,3)
-        self.start_tm = intTodatetime(int(order.begin * 1000))
-        self.end_tm = intTodatetime(int(order.end * 1000))
-        self.start = order.begin * 1000
-        self.end = order.end * 1000
-        self.chargecost, self.servecost = self.Calc(FAST_SPEED if order.chargeType == 'fast' else SLOW_SPEED)
-        self.totalcost = round(self.chargecost + self.servecost,2)
-        self.aimed_end_time = intTodatetime(int(order.aimed_end_time))
-        self.Show()
+    def __init__(self, order, canceled=0):
+        if type(order) == Order:
+            global id
+            self.BillID = id
+            id = id + 1
+            self.chargeID = order.chargeID
+            self.billTime = time.time() * 1000
+            self.username = order.username
+            self.charge_type = order.chargeType
+            self.aimed_quantity = order.chargeQuantity
+            # print(order.end,order.begin)
+            self.real_quantity = round((order.end - order.begin) * (
+                FAST_SPEED if order.chargeType == 'fast' else SLOW_SPEED) if canceled else order.chargeQuantity,3)
+            self.start_tm = intTodatetime(int(order.begin * 1000))
+            self.end_tm = intTodatetime(int(order.end * 1000))
+            self.start = order.begin * 1000
+            self.end = order.end * 1000
+            self.chargecost, self.servecost = self.Calc(FAST_SPEED if order.chargeType == 'fast' else SLOW_SPEED)
+            self.totalcost = round(self.chargecost + self.servecost,2)
+            self.aimed_end_time = intTodatetime(int(order.aimed_end_time))
+            self.Show()
+        elif type(order) == dict:
+            self.BillID = order["BillID"]
+            self.chargeID = order["chargeID"]
+            self.billTime = order["billTime"]
+            self.username = order["username"]
+            self.charge_type = order["charge_type"]
+            self.aimed_quantity = order["aimed_quantity"]
+            self.real_quantity = order["real_quantity"]
+            self.start_tm = order["start_tm"]
+            self.end_tm = order["end_tm"]
+            self.start = order["start"]
+            self.end = order["end"]
+            self.chargecost = order["chargecost"]
+            self.servecost = order["servecost"]
+            self.totalcost = order["totalcost"]
+            self.aimed_end_time = order["aimed_end_time"]
+
+    # 为了存储，转换成dict
+    def todict(self):
+        ans = {
+            "BillID":self.BillID,
+            "chargeID":self.chargeID,
+            "billTime":self.billTime,
+            "username":self.username,
+            "charge_type":self.charge_type,
+            "aimed_quantity":self.aimed_quantity,
+            "real_quantity":self.real_quantity,
+            "start_tm":self.start_tm,
+            "end_tm":self.end_tm,
+            "start":self.start,
+            "end":self.end,
+            "chargecost":self.chargecost,
+            "servecost":self.servecost,
+            "totalcost":self.totalcost,
+            "aimed_end_time":self.aimed_end_time
+        }
+        return ans
     # 计算费用
     def Calc(self,ChargeSpeed):
         #因为速度恒定，所以只知道start_tm和end_tm可以求出
@@ -183,13 +221,13 @@ class ChargeBoot:
                 bill = Bill(head, 1)
                 self.usr2bill[head.username].append(bill)
                 table = self.db.Query("ChargerBillList",self.name)
-                table[str(int(time.time())) + '_'+str(bill.BillID)] = bill
+                table[str(int(time.time())) + '_'+str(bill.BillID)] = bill.todict()
                 self.db.Update("ChargerBillList",self.name, table)
             else:
                 bill = Bill(head, 1)
                 self.usr2bill[head.username] = [bill]
                 table = self.db.Query("ChargerBillList", self.name)
-                table[str(int(time.time())) + '_' + str(bill.BillID)] = bill
+                table[str(int(time.time())) + '_' + str(bill.BillID)] = bill.todict()
                 self.db.Update("ChargerBillList",self.name, table)
             del self.timers[head.username]
             # 结算正在进行的
@@ -235,13 +273,13 @@ class ChargeBoot:
             bill = Bill(ord, cancel)
             self.usr2bill[ord.username].append(bill)
             table = self.db.Query("ChargerBillList", self.name)
-            table[str(int(time.time())) + '_' + str(bill.BillID)] = bill
+            table[str(int(time.time())) + '_' + str(bill.BillID)] = bill.todict()
             self.db.Update("ChargerBillList",self.name, table)
         else:
             bill = Bill(ord, cancel)
             self.usr2bill[ord.username] = [bill]
             table = self.db.Query("ChargerBillList", self.name)
-            table[str(int(time.time())) + '_' + str(bill.BillID)] = bill
+            table[str(int(time.time())) + '_' + str(bill.BillID)] = bill.todict()
             self.db.Update("ChargerBillList",self.name, table)
         self.busy = False
         del self.timers[ord.username]
@@ -293,7 +331,6 @@ class ChargeBoot:
         print("ReadyQueue:")
         for i in self.ReadyQueue:
             print(i, end='')
-
 
 class ListNode:
     def __init__(self, order: Order):
@@ -384,6 +421,7 @@ class Queue:
         cur = self.head
         while cur != None:
             ret.append(cur.order)
+            cur = cur.next
         self.mutex.release()
         return ret
 
