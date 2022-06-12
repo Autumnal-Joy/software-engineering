@@ -9,6 +9,8 @@
 
 
 '''
+import logging
+
 import structure as st
 import user.service as us
 import admin.service as ms
@@ -20,6 +22,8 @@ import db.db as db
 
 '''
 from flask import Flask, render_template, request, redirect, make_response
+import logging
+from logging import FileHandler
 
 app = Flask('Walker',
             template_folder="build", static_folder="build/static")
@@ -122,6 +126,7 @@ adminService = ms.Service(db,pd)
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def catch_all(path):
+    app.logger.info('用户请求服务')
     return render_template('index.html')
 
 
@@ -130,7 +135,7 @@ def resp():
     req = request.json
     print(req)
 
-    result, err = None, None
+    result, err, log = None, None, ['', ''] # log[0] 是成功信息，只在err==None时log，log[1]是通用信息，无论何时都log
 
     try:
         method = req["method"]
@@ -140,13 +145,13 @@ def resp():
         return ErrorTemplate(ParametersNotExpected)
 
     if method == "userLogin":
-        result, err = userService.userLogin(**user)
+        result, err, log = userService.userLogin(**user)
 
     elif method == "userRegister":
-        result, err = userService.userRegister(**user)
+        result, err, log = userService.userRegister(**user)
 
     elif method == "adminLogin":
-        result, err = adminService.adminLogin(**user)
+        result, err, log = adminService.adminLogin(**user)
 
     else:
         params.pop('password', None)
@@ -154,22 +159,26 @@ def resp():
         try:
             if method.startswith("user"):
                 fn = getattr(userService, method)
-                result, err = fn(**params)
+                result, err, log = fn(**params)
             elif method.startswith("admin"):
                 fn = getattr(adminService, method)
-                result, err = fn(**params)
+                result, err, log = fn(**params)
             else:
                 err = MethodNotFound
         except AttributeError:
             err = MethodNotFound
 
-    print("result:",result,"error:",err)
+    # print("result:", result,"error:", err)
     if err is None:
+        app.logger.info(log[0] + ', ' + log[1])
         return SuccessTemplate(result)
     else:
+        app.logger.info(err + ', ' + log[1])
         return ErrorTemplate(err)
 
 
 if __name__ == '__main__':
     # print(methods)
+    app.debug = True
     app.run(port=8081)
+
