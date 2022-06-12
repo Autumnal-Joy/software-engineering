@@ -10,6 +10,17 @@ from structure import Order
 # ChargingQueueLen(M)          充电桩排队队列长度
 
 
+'''
+@2022/06/12 董文阔：service的每一个返回值在data 和 err 后边还有一个log列表，规则是这样
+log[0]是成功时log信息，表示用户请求服务成功，
+log[1]是只要调用函数就会log的信息，无论成功或失败，一般来说就应该是请求的参数
+最后的log大致就是:
+        请求成功: log[0] + ', ' + log[1]
+        请求失败: err    + ', ' + log[1]
+不过我只写了service层次的log，你如果想要添加更底层的log，可能需要拼接一下这个字符串
+'''
+
+
 class Service:
     def __init__(self, db, pd):
         self.db = db
@@ -47,7 +58,10 @@ class Service:
             err = "用户名或密码错误"
         else:
             data = {"status": True}
-        return data, err
+        return data, err, [
+            '登录成功',
+            '用户名:{}, 密码:{}'.format(username, password)
+        ]
 
     """ 
     params
@@ -73,7 +87,10 @@ class Service:
         }
         if self.db.Insert("UserInfo", username, table) is False:
             data, err = None, "数据库载入错误"
-        return data, err
+        return data, err, [
+            '注册成功',
+            '用户名:{}, 密码:{}'.format(username, password)
+        ]
 
     """ 
     params
@@ -100,7 +117,10 @@ class Service:
         else:
             self.usr2ord[username] = new_ord
             self.Schedule()
-        return data, err
+        return data, err, [
+            '预约成功, 号码:{}'.format(new_ord),
+            '用户名:{}, 类型:{}, 充电量:{}度'.format(username, chargeType, chargeQuantity)
+        ]
 
     """ 
     params
@@ -119,7 +139,10 @@ class Service:
         else:
             data["chargeType"] = self.usr2ord[username].chargeType
             data["chargeQuantity"] = self.usr2ord[username].chargeQuantity
-        return data, err
+        return data, err, [
+            '查询成功, 类型:{}, 充电量:{}度'.format(data['chargeType'], data['chargeQuantity']),
+            '用户名:{}'.format(username)
+        ]
 
     """ 
     params
@@ -136,7 +159,10 @@ class Service:
             data, err = None, "用户尚未预约"
         else:
             data["lineNo"] = self.usr2ord[username].serialnum
-        return data, err
+        return data, err, [
+            '查询排号成功, 号码:{}'.format(data['lineNo']),
+            '用户名:{}'.format(username)
+        ]
 
     """ 
     params
@@ -160,7 +186,10 @@ class Service:
         else:
             data["rank"] = ans + 1
             data["endingTime"] = -1
-        return data, err
+        return data, err, [
+            '查询Rank成功, Rank:{}, 预计充电时间:{}'.format(data['rank'], data['endingTime']),
+            '用户名:{}'.format(username)
+        ]
 
     """ 
     params
@@ -186,7 +215,10 @@ class Service:
             d, e = self.userSendOrder(username, chargeType, chargeQuantity)
             if d is None:
                 return d, e
-        return data, err
+        return data, err, [
+            '操作成功',
+            '用户名:{}, 类型:{}, 充电量:{}度'.format(username, chargeType, chargeQuantity)
+        ]
 
     """ 
     params
@@ -208,7 +240,10 @@ class Service:
             data, err = None, "用户不在等候区,请求被拒绝"
         else:
             self.waitqueue.change_quantity(username, chargeQuantity)
-        return data, err
+        return data, err, [
+            '操作成功',
+            '用户名:{}, 充电量:{}'.format(username, chargeQuantity)
+        ]
 
     """ 
     params
@@ -244,7 +279,10 @@ class Service:
                 print(username)
                 print(self.usr2ord)
                 del self.usr2ord[username]
-        return data, err
+        return data, err, [
+            '取消成功',
+            '用户名:{}'.format(username)
+        ]
 
     """ 
     params
@@ -262,7 +300,10 @@ class Service:
         if username in self.usr2bill:
             for x in self.usr2bill[username]:
                 data.append({"billID": x.BillID, "billTime": x.end, "chargeQuantity": x.real_quantity})
-        return data, err
+        return data, err, [
+            '获取详单成功',
+            '用户名:{}'.format(username)
+        ]
 
     """ 
     params
@@ -304,4 +345,7 @@ class Service:
         else:
             data, err = None, "该用户没有该billID的账单"
             print(data)
-        return data, err
+        return data, err, [
+            '获取账单成功',
+            '用户名:{}, 详单编号:{}'.format(username, billID)
+        ]
