@@ -3,7 +3,6 @@ import sys
 sys.path.append("..")
 from structure import Order
 
-
 # FastChargingPileNum(FPN)        快充电桩数
 # TrickleChargingPileNum(TPN)    慢充电桩数
 # WaitingAreaSize(N)           等候区车位容量

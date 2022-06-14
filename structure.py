@@ -67,13 +67,13 @@ class Bill:
             self.aimed_quantity = order.chargeQuantity
             # print(order.end,order.begin)
             self.real_quantity = round((order.end - order.begin) * (
-                FAST_SPEED if order.chargeType == 'fast' else SLOW_SPEED) if canceled else order.chargeQuantity,3)
+                FAST_SPEED if order.chargeType == 'fast' else SLOW_SPEED) if canceled else order.chargeQuantity, 3)
             self.start_tm = intTodatetime(int(order.begin * 1000))
             self.end_tm = intTodatetime(int(order.end * 1000))
             self.start = order.begin * 1000
             self.end = order.end * 1000
             self.chargecost, self.servecost = self.Calc(FAST_SPEED if order.chargeType == 'fast' else SLOW_SPEED)
-            self.totalcost = round(self.chargecost + self.servecost,2)
+            self.totalcost = round(self.chargecost + self.servecost, 2)
             self.aimed_end_time = intTodatetime(int(order.aimed_end_time))
             self.Show()
         elif type(order) == dict:
@@ -114,6 +114,7 @@ class Bill:
         return
 
         # 计算费用
+
     def Calc(self, ChargeSpeed):
         # 因为速度恒定，所以只知道start_tm和end_tm可以求出
         # 峰时(1.0元/度) (10:00-15:00 18:00-21:00)
@@ -145,7 +146,7 @@ class Bill:
         day = start[2]
         if (day != end[2] or st <= ed):
             charge_cost += ((time_point[st] * 3600 - start[3] * 3600 - start[4] * 60 - start[5] - start[6] * 0.001) % (
-                        24 * 3600)) * ChargeSpeed * fee[(st - 1) % len(fee)]
+                    24 * 3600)) * ChargeSpeed * fee[(st - 1) % len(fee)]
             while (day != end[2] or st != ed):
                 charge_cost += (((time_point[(st + 1) % len(time_point)] - time_point[st]) % 24) * 3600) * ChargeSpeed * \
                                fee[(st) % len(fee)]
@@ -154,7 +155,7 @@ class Bill:
                     st = 0
                     day = day + 1
             charge_cost += ((end[3] * 3600 + end[4] * 60 + end[5] + end[6] * 0.001 - time_point[ed] * 3600) % (
-                        24 * 3600)) * ChargeSpeed * fee[(ed) % len(fee)]
+                    24 * 3600)) * ChargeSpeed * fee[(ed) % len(fee)]
         elif (st == ed + 1):
             charge_cost += (end[3] * 3600 + end[4] * 60 + end[5] + end[6] * 0.001 - start[3] * 3600 - start[4] * 60 -
                             start[5] - start[6] * 0.001) * ChargeSpeed * fee[(ed) % len(fee)]
@@ -437,7 +438,7 @@ class Queue:
         ret = []
         cur = self.head
         while cur is not None:
-            #print("***cur", cur)
+            # print("***cur", cur)
             ret.append(cur.order)
             cur = cur.next
         self.mutex.release()

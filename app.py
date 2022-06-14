@@ -119,8 +119,8 @@ def userCheck(username, password):
 
 db = db.DB("data.db")
 pd = st.PublicDataStruct(db)
-userService = us.Service(db,pd)
-adminService = ms.Service(db,pd)
+userService = us.Service(db, pd)
+adminService = ms.Service(db, pd)
 
 
 @app.route('/', defaults={'path': ''})
@@ -135,7 +135,7 @@ def resp():
     req = request.json
     print(req)
 
-    result, err, log = None, None, ['', ''] # log[0] 是成功信息，只在err==None时log，log[1]是通用信息，无论何时都log
+    result, err, log = None, None, ['', '']  # log[0] 是成功信息，只在err==None时log，log[1]是通用信息，无论何时都log
 
     try:
         method = req["method"]
@@ -181,4 +181,3 @@ if __name__ == '__main__':
     # print(methods)
     app.debug = True
     app.run(port=8081)
-
