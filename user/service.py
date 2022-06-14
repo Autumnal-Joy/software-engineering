@@ -95,7 +95,7 @@ class Service:
     params
         username            用户名
         chargeQuantity      充电量（单位：度）
-        chargeType          充电类别（取值："fast" or "slow"）
+        chargeType          充电类别（取值："F" or "T"）
         
     returns
         status              用于没有实际数据返回时，表示操作是否成功
@@ -126,7 +126,7 @@ class Service:
         username            用户名
     
     returns
-        chargeType          充电类别（"fast" or "slow"）
+        chargeType          充电类别（"F" or "T"）
         chargeQuantity      充电量（单位：度）
     """
 
@@ -194,7 +194,7 @@ class Service:
     params
         username            用户名
         chargeQuantity      充电量（单位：度）
-        chargeType          充电类别（取值："fast" or "slow"）
+        chargeType          充电类别（取值："F" or "T"）
         
     returns
         status              用于没有实际数据返回时，表示操作是否成功

@@ -72,7 +72,7 @@ class Bill:
             self.end_tm = intTodatetime(int(order.end * 1000))
             self.start = order.begin * 1000
             self.end = order.end * 1000
-            self.chargecost, self.servecost = self.Calc(FAST_SPEED if order.chargeType == 'fast' else SLOW_SPEED)
+            self.chargecost, self.servecost = self.Calc(FAST_SPEED if order.chargeType == 'F' else SLOW_SPEED)
             self.totalcost = round(self.chargecost + self.servecost, 2)
             self.aimed_end_time = intTodatetime(int(order.aimed_end_time))
             self.Show()
@@ -490,7 +490,7 @@ class WaitArea:
     # 将Order加入等待队列
     def addord(self, order: Order):
         self.mutex_wait_lock.acquire()
-        if order.chargeType == 'fast':
+        if order.chargeType == 'F':
             order.serialnum = 'F' + str(self.fast_serial)
             self.usr2num[order.username] = "Wait"
             self.fast_serial = self.fast_serial + 1
@@ -504,7 +504,7 @@ class WaitArea:
         if self.Wait_Queue.push(order) is False:
             order.status = 'Declined'
             del self.usr2num[order.username]
-            if order.chargeType == 'fast':
+            if order.chargeType == 'F':
                 self.fast_serial = self.fast_serial - 1
                 self.fast_order_in_wait = self.fast_order_in_wait - 1
             else:
@@ -538,7 +538,7 @@ class WaitArea:
             del self.usr2num[username]
             self.emergency_slow_queue.cancel(username)
         elif self.usr2num[username] == "Wait":
-            if self.Wait_Queue.ord2idx[username].order.chargeType == 'fast':
+            if self.Wait_Queue.ord2idx[username].order.chargeType == 'F':
                 self.fast_order_in_wait = self.fast_order_in_wait - 1
             else:
                 self.slow_order_in_wait = self.slow_order_in_wait - 1
@@ -559,7 +559,7 @@ class WaitArea:
             return ans
         # 在WaitQueue中找
         cur = self.Wait_Queue.head
-        while cur is not None and cur.order.chargeType != 'fast':
+        while cur is not None and cur.order.chargeType != 'F':
             cur = cur.next
         if cur is None:
             return None
@@ -576,7 +576,7 @@ class WaitArea:
             return ans
         # 在WaitQueue中找
         cur = self.Wait_Queue.head
-        while cur is not None and cur.order.chargeType != 'slow':
+        while cur is not None and cur.order.chargeType != 'T':
             cur = cur.next
         if cur is None:
             return None
