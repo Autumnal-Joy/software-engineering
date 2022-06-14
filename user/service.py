@@ -38,7 +38,7 @@ class Service:
         self.Fast_Speed = pd.Fast_Speed
         self.Slow_Speed = pd.Slow_Speed
         self.Schedule = pd.Schedule
-
+        self.Gettime = pd.Gettime
     """ 
     params
         username            用户名
@@ -110,7 +110,7 @@ class Service:
         if username in self.usr2ord:
             data, err = None, "用户已经预约过"
             return data, err
-        new_ord = Order(username, chargeType, chargeQuantity)
+        new_ord = Order(username, chargeType, chargeQuantity,self.Gettime)
         res = self.waitqueue.addord(new_ord)
         if res is False:
             data, err = None, "等待区满，预约被拒绝"

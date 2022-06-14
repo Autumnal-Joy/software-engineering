@@ -25,7 +25,7 @@ def intTodatetime(intValue):
 
 
 class Order:
-    def __init__(self, username, chargeType, chargeQuantity):
+    def __init__(self, username, chargeType, chargeQuantity,Gettime):
         self.username = username  # 用户名
         self.chargeType = chargeType  # 充电类型
         self.chargeQuantity = chargeQuantity  # 充电量
@@ -36,7 +36,7 @@ class Order:
         self.end = 0
         self.aimed_end_time = 0
         self.chargeID = 0  # 充电桩编号
-        self.createtime = time.time()  # 订单生成时间
+        self.createtime = Gettime()  # 订单生成时间
 
     # 用于debug
     def show(self):
@@ -55,13 +55,13 @@ id = 1
 
 
 class Bill:
-    def __init__(self, order, canceled=0):
+    def __init__(self, order, Gettime , canceled=0):
         if type(order) == Order:
             global id
             self.BillID = id
             id = id + 1
             self.chargeID = order.chargeID
-            self.billTime = time.time() * 1000
+            self.billTime = Gettime() * 1000
             self.username = order.username
             self.charge_type = order.chargeType
             self.aimed_quantity = order.chargeQuantity
@@ -92,7 +92,6 @@ class Bill:
             self.servecost = order["servecost"]
             self.totalcost = order["totalcost"]
             self.aimed_end_time = order["aimed_end_time"]
-
     # 为了存储，转换成dict
     def todict(self):
         ans = {
@@ -162,7 +161,6 @@ class Bill:
         else:
             print("Calc Error")
         return round(charge_cost, 2), round(0.8 * self.real_quantity, 2)
-
     def Show(self):
         print("生成了账单:")
         print("username = ", self.username)
@@ -183,8 +181,8 @@ class Bill:
 
 
 class ChargeBoot:
-    def __init__(self, M: int, type: str, speed: int, rank: int, ReadyQueue: list, ready_queue_lock, Schedule, usr2bill,
-                 usr2ord, db):
+    def __init__(self, M: int, type: str, speed: int, rank: int, ReadyQueue: list, ready_queue_lock, Schedule, Gettime,usr2bill,
+                 usr2ord, time_acc,db):
         self.db = db
         self.volumn = M
         self.ServeQueue = Queue(M)
@@ -201,7 +199,8 @@ class ChargeBoot:
         self.usr2ord = usr2ord
         self.name = type + str(rank)
         self.working = True
-
+        self.Gettime = Gettime
+        self.time_acc = time_acc
     def get_all_ord_now(self):
         return self.ServeQueue.peek_all()
 
@@ -231,18 +230,18 @@ class ChargeBoot:
             head = self.ServeQueue.pop()
             self.timers[head.username][0].cancel()
             head.status = 'Partial-Compelete'
-            head.end = time.time()
+            head.end = self.Gettime()
             if head.username in self.usr2bill:
-                bill = Bill(head, 1)
+                bill = Bill(head, self.Gettime,1)
                 self.usr2bill[head.username].append(bill)
                 table = self.db.Query("ChargerBillList", self.name)
-                table[str(int(time.time())) + '_' + str(bill.BillID)] = bill
+                table[str(int(self.Gettime())) + '_' + str(bill.BillID)] = bill
                 self.db.Update("ChargerBillList", self.name, table)
             else:
-                bill = Bill(head, 1)
+                bill = Bill(head,self.Gettime,1)
                 self.usr2bill[head.username] = [bill]
                 table = self.db.Query("ChargerBillList", self.name)
-                table[str(int(time.time())) + '_' + str(bill.BillID)] = bill
+                table[str(int(self.Gettime())) + '_' + str(bill.BillID)] = bill
                 self.db.Update("ChargerBillList", self.name, table)
             del self.timers[head.username]
             # 结算正在进行的
@@ -255,7 +254,7 @@ class ChargeBoot:
 
     # 添加订单 外面控制了是否满 因此这里没必要控制
     def add(self, order: Order):
-        order.aimed_end_time = (time.time() + self.CalcRealWaittime() + order.chargeQuantity / self.Charge_Speed) * 1000
+        order.aimed_end_time = (self.Gettime() + self.CalcRealWaittime() + order.chargeQuantity / self.Charge_Speed) * 1000
         self.totalwait += order.chargeQuantity / self.Charge_Speed
         self.ServeQueue.push(order)
         if self.busy is False:
@@ -270,31 +269,33 @@ class ChargeBoot:
         order = self.ServeQueue.peek()
         if order is None:
             return
-        self.timers[order.username] = (Timer(order.chargeQuantity / self.Charge_Speed, self.CallBack), time.time())
+
+        cgt = order.chargeQuantity / self.Charge_Speed / self.time_acc
+        self.timers[order.username] = (Timer(cgt , self.CallBack), self.Gettime())
         self.timers[order.username][0].start()
-        order.begin = time.time()
-        print("user {}开启了一个{}s的定时".format(order.username, order.chargeQuantity / self.Charge_Speed))
+        order.begin = self.Gettime()
+        print("user {}开启了一个{}s的定时(时间加速{}倍)".format(order.username, cgt,self.time_acc))
 
         self.busy = True
 
     # 定时器结束的回调函数，包含生成账单，从服务队列中移除等
     def CallBack(self, cancel=0):
-        endt = time.time()
+        endt = self.Gettime()
         ord = self.ServeQueue.pop()
         ord.status = 'Compelete'
         ord.end = endt
         self.totalwait -= ord.chargeQuantity / self.Charge_Speed
         if ord.username in self.usr2bill:
-            bill = Bill(ord, cancel)
+            bill = Bill(ord, self.Gettime, cancel)
             self.usr2bill[ord.username].append(bill)
             table = self.db.Query("ChargerBillList", self.name)
-            table[str(int(time.time())) + '_' + str(bill.BillID)] = bill
+            table[str(int(self.Gettime())) + '_' + str(bill.BillID)] = bill
             self.db.Update("ChargerBillList", self.name, table)
         else:
-            bill = Bill(ord, cancel)
+            bill = Bill(ord,self.Gettime,cancel)
             self.usr2bill[ord.username] = [bill]
             table = self.db.Query("ChargerBillList", self.name)
-            table[str(int(time.time())) + '_' + str(bill.BillID)] = bill
+            table[str(int(self.Gettime())) + '_' + str(bill.BillID)] = bill
             self.db.Update("ChargerBillList", self.name, table)
         self.busy = False
         del self.timers[ord.username]
@@ -323,7 +324,7 @@ class ChargeBoot:
         top = self.ServeQueue.peek()
         if top is None:
             return self.totalwait
-        return self.totalwait - (time.time() - self.timers[top.username][1])
+        return self.totalwait - (self.Gettime() - self.timers[top.username][1])
 
     # 用于debug
     def witness(self):
@@ -628,6 +629,7 @@ class PublicDataStruct:
         self.N, self.M, self.FPN, self.TPN = data['WSZ'], data['CQL'], data['FPN'], data['TPN']
         FAST_SPEED = data['FAST_SPEED']
         SLOW_SPEED = data['SLOW_SPEED']
+        self.time_acc = data["TIME_ACC"] #时间加速比
         # FAST_SPEED和SLOW_SPEED用于structure的其他类
         # self.Fast_Speed和self.Slow_Speed用于user.Service和admin.Service作为参数传递
         self.Fast_Speed = FAST_SPEED
@@ -641,13 +643,16 @@ class PublicDataStruct:
         self.FastReadyQueue = [i for i in range(0, self.FPN)]
         self.SlowReadyQueue = [i for i in range(0, self.TPN)]
         self.FastBoot = [
-            ChargeBoot(self.M, 'F', FAST_SPEED, i, self.FastReadyQueue, self.fast_ready_lock, self.Schedule,
+            ChargeBoot(self.M, 'F', FAST_SPEED, i, self.FastReadyQueue, self.fast_ready_lock, self.Schedule,self.Gettime,
                        self.usr2bill,
-                       self.usr2ord, db) for i in range(0, self.FPN)]
+                       self.usr2ord, self.time_acc,db) for i in range(0, self.FPN)]
         self.SlowBoot = [
-            ChargeBoot(self.M, 'T', SLOW_SPEED, i, self.SlowReadyQueue, self.slow_ready_lock, self.Schedule,
+            ChargeBoot(self.M, 'T', SLOW_SPEED, i, self.SlowReadyQueue, self.slow_ready_lock, self.Schedule,self.Gettime,
                        self.usr2bill,
-                       self.usr2ord, db) for i in range(0, self.TPN)]
+                       self.usr2ord, self.time_acc,db) for i in range(0, self.TPN)]
+
+        self.system_start_time = time.time()
+        self.system_start_time_stamp = int(time.mktime(time.strptime("2022-06-14 06:00:00","%Y-%m-%d %H:%M:%S")))
 
     # 内部调度函数Schedule
     def Schedule(self):
@@ -717,3 +722,8 @@ class PublicDataStruct:
                 del self.SlowReadyQueue[sel]
         self.slow_ready_lock.release()
         self.mutex_wait_lock.release()
+
+
+    # 内部计算时间函数Gettime()
+    def Gettime(self):
+        return self.system_start_time_stamp + (time.time() - self.system_start_time) * self.time_acc
