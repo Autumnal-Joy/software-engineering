@@ -57,6 +57,12 @@ class Service:
             err = "用户名或密码错误"
         else:
             data = {"status": True}
+
+        if err is not None:
+            return data,err,[
+                '登录失败',
+                '登录失败,错误原因:{}'.format(err)
+            ]
         return data, err, [
             '登录成功',
             '用户名:{}, 密码:{}'.format(username, password)
@@ -79,13 +85,18 @@ class Service:
         table = self.db.Query("UserInfo", username)
         if "password" in table:
             data, err = None, "用户名重复"
-            return data, err
-        table = {
-            'username': username,
-            'password': password
-        }
-        if self.db.Insert("UserInfo", username, table) is False:
-            data, err = None, "数据库载入错误"
+        else:
+            table = {
+                'username': username,
+                'password': password
+            }
+            if self.db.Insert("UserInfo", username, table) is False:
+                data, err = None, "数据库载入错误"
+        if err is not None:
+            return data,err,[
+                '注册失败',
+                '注册失败,错误原因{}'.format(err)
+            ]
         return data, err, [
             '注册成功',
             '用户名:{}, 密码:{}'.format(username, password)
@@ -108,14 +119,19 @@ class Service:
                     }, None
         if username in self.usr2ord:
             data, err = None, "用户已经预约过"
-            return data, err
-        new_ord = Order(username, chargeType, chargeQuantity,self.Gettime)
-        res = self.waitqueue.addord(new_ord)
-        if res is False:
-            data, err = None, "等待区满，预约被拒绝"
         else:
-            self.usr2ord[username] = new_ord
-            self.Schedule()
+            new_ord = Order(username, chargeType, chargeQuantity,self.Gettime)
+            res = self.waitqueue.addord(new_ord)
+            if res is False:
+                data, err = None, "等待区满，预约被拒绝"
+            else:
+                self.usr2ord[username] = new_ord
+                self.Schedule()
+        if err is not None:
+            return data, err, [
+                '预约失败',
+                '预约失败,错误原因{}'.format(err)
+            ]
         return data, err, [
             '预约成功, 号码:{}'.format(new_ord),
             '用户名:{}, 类型:{}, 充电量:{}度'.format(username, chargeType, chargeQuantity)
@@ -138,6 +154,11 @@ class Service:
         else:
             data["chargeType"] = self.usr2ord[username].chargeType
             data["chargeQuantity"] = self.usr2ord[username].chargeQuantity
+        if err is not None:
+            return data,err,[
+                '查询订单失败',
+                '查询订单失败,错误原因{}'.format(err)
+            ]
         return data, err, [
             '查询成功, 类型:{}, 充电量:{}度'.format(data['chargeType'], data['chargeQuantity']),
             '用户名:{}'.format(username)
@@ -158,6 +179,11 @@ class Service:
             data, err = None, "用户尚未预约"
         else:
             data["lineNo"] = self.usr2ord[username].serialnum
+        if err is not None:
+            return data,err,[
+                '查询排号失败',
+                '查询排号失败,错误原因{}'.format(err)
+            ]
         return data, err, [
             '查询排号成功, 号码:{}'.format(data['lineNo']),
             '用户名:{}'.format(username)
@@ -177,14 +203,19 @@ class Service:
         data, err = {}, None
         if username not in self.usr2ord:
             data, err = None, "用户尚未预约"
-            return data, err
-        ans = self.waitqueue.getCarBeforenum(username)
-        if ans == -1:
-            data["rank"] = 0
-            data["endingTime"] = self.usr2ord[username].aimed_end_time
         else:
-            data["rank"] = ans + 1
-            data["endingTime"] = -1
+            ans = self.waitqueue.getCarBeforenum(username)
+            if ans == -1:
+                data["rank"] = 0
+                data["endingTime"] = self.usr2ord[username].aimed_end_time
+            else:
+                data["rank"] = ans + 1
+                data["endingTime"] = -1
+        if err is not None:
+            return data,err,[
+                '查询Rank失败',
+                '查询Rank失败,错误原因{}'.format(err)
+            ]
         return data, err, [
             '查询Rank成功, Rank:{}, 预计充电时间:{}'.format(data['rank'], data['endingTime']),
             '用户名:{}'.format(username)
@@ -211,9 +242,12 @@ class Service:
             data, err = None, "订单不在等候区,请求被拒绝"
         else:
             self.waitqueue.delord(username)
-            d, e = self.userSendOrder(username, chargeType, chargeQuantity)
-            if d is None:
-                return d, e
+            data, err , log = self.userSendOrder(username, chargeType, chargeQuantity)
+        if err is not None:
+            return data,err,[
+                '修改充电方式失败',
+                '修改充电方式失败,错误原因{}'.format(err)
+            ]
         return data, err, [
             '操作成功',
             '用户名:{}, 类型:{}, 充电量:{}度'.format(username, chargeType, chargeQuantity)
@@ -239,6 +273,11 @@ class Service:
             data, err = None, "用户不在等候区,请求被拒绝"
         else:
             self.waitqueue.change_quantity(username, chargeQuantity)
+        if err is not None:
+            return data,err,[
+                '修改充电量失败',
+                '修改充电量失败,错误原因{}'.format(err)
+            ]
         return data, err, [
             '操作成功',
             '用户名:{}, 充电量:{}'.format(username, chargeQuantity)
@@ -257,7 +296,6 @@ class Service:
         data, err = {
                         "status": True
                     }, None
-        print("正在取消", username, "的订单:status:", self.usr2ord[username].status)
         if username not in self.usr2ord:
             data, err = None, "用户尚未预约"
         elif self.usr2ord[username].status[0] == 'S':
@@ -275,9 +313,14 @@ class Service:
             if self.waitqueue.delord(username) is False:  # 订单刚刚调度到服务队列去
                 return self.userSendCancelCharge(username)
             else:
-                print(username)
-                print(self.usr2ord)
+                #print(username)
+                #print(self.usr2ord)
                 del self.usr2ord[username]
+        if err is not None:
+            return data,err,[
+                '取消失败',
+                '取消失败,错误原因{}'.format(err)
+            ]
         return data, err, [
             '取消成功',
             '用户名:{}'.format(username)
@@ -344,6 +387,11 @@ class Service:
         else:
             data, err = None, "该用户没有该billID的账单"
             print(data)
+        if err is not None:
+            return data,err,[
+                '获取账单失败',
+                '获取账单失败,错误原因{}'.format(err)
+            ]
         return data, err, [
             '获取账单成功',
             '用户名:{}, 详单编号:{}'.format(username, billID)
