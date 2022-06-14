@@ -206,10 +206,10 @@ class Service:
         }
     """
 
-    def tableAdd(self,table: dict, add: dict):
+    def tableAdd(self, table: dict, add: dict):
         table["totalChargeCount"] = table["totalChargeCount"] + 1
         table["totalChargeTime"] = table["totalChargeTime"] + add["ChargeTime"]
-        table["totalChargeQuantity"] = table["totalChargeQuantity"]  + add["ChargeQuantity"]
+        table["totalChargeQuantity"] = table["totalChargeQuantity"] + add["ChargeQuantity"]
         table["totalChargeCost"] = table["totalChargeCost"] + add["ChargeCost"]
         table["totalServiceCost"] = table["totalServiceCost"] + add["ServiceCost"]
         table["totalCost"] = table["totalServiceCost"] + table["totalChargeCost"]
@@ -222,35 +222,35 @@ class Service:
         BootList.extend(self.FastBoot)
         BootList.extend(self.SlowBoot)
 
-
-        billday = {"time": "今日", "totalChargeCount": 0,"totalChargeTime": 0,"totalChargeQuantity": 0,
-                   "totalChargeCost": 0,"totalServiceCost": 0,"totalCost": 0,"chargers":[]}
-        billweek = {"time": "本周", "totalChargeCount": 0,"totalChargeTime": 0,"totalChargeQuantity": 0,
-                   "totalChargeCost": 0,"totalServiceCost": 0,"totalCost": 0,"chargers":[]}
-        billmonth = {"time": "本月", "totalChargeCount": 0,"totalChargeTime": 0,"totalChargeQuantity": 0,
-                   "totalChargeCost": 0,"totalServiceCost": 0,"totalCost": 0,"chargers":[]}
-        billall = {"time": "总共", "totalChargeCount": 0,"totalChargeTime": 0,"totalChargeQuantity": 0,
-                   "totalChargeCost": 0,"totalServiceCost": 0,"totalCost": 0,"chargers":[]}
+        billday = {"time": "今日", "totalChargeCount": 0, "totalChargeTime": 0, "totalChargeQuantity": 0,
+                   "totalChargeCost": 0, "totalServiceCost": 0, "totalCost": 0, "chargers": []}
+        billweek = {"time": "本周", "totalChargeCount": 0, "totalChargeTime": 0, "totalChargeQuantity": 0,
+                    "totalChargeCost": 0, "totalServiceCost": 0, "totalCost": 0, "chargers": []}
+        billmonth = {"time": "本月", "totalChargeCount": 0, "totalChargeTime": 0, "totalChargeQuantity": 0,
+                     "totalChargeCost": 0, "totalServiceCost": 0, "totalCost": 0, "chargers": []}
+        billall = {"time": "总共", "totalChargeCount": 0, "totalChargeTime": 0, "totalChargeQuantity": 0,
+                   "totalChargeCost": 0, "totalServiceCost": 0, "totalCost": 0, "chargers": []}
         bootbilltable = {}
         now = time.time()
 
         for boot in BootList:
             table = self.db.Query("ChargerBillList", boot.name)
-            bootbilltable[boot.name] = {"day": {"chargerID": boot.name, "totalChargeCount": 0, "totalChargeTime": 0, "totalChargeQuantity": 0,
-                                                "totalChargeCost": 0, "totalServiceCost": 0, "totalCost": 0},
-                                        "week": {"chargerID": boot.name,"totalChargeCount": 0, "totalChargeTime": 0, "totalChargeQuantity": 0,
-                                                "totalChargeCost": 0, "totalServiceCost": 0, "totalCost": 0},
-                                        "month": {"chargerID": boot.name,"totalChargeCount": 0, "totalChargeTime": 0, "totalChargeQuantity": 0,
-                                                "totalChargeCost": 0, "totalServiceCost": 0, "totalCost": 0},
-                                        "all": {"chargerID": boot.name,"totalChargeCount": 0, "totalChargeTime": 0, "totalChargeQuantity": 0,
-                                                "totalChargeCost": 0, "totalServiceCost": 0, "totalCost": 0}
-                                        }
+            bootbilltable[boot.name] = {
+                "day": {"chargerID": boot.name, "totalChargeCount": 0, "totalChargeTime": 0, "totalChargeQuantity": 0,
+                        "totalChargeCost": 0, "totalServiceCost": 0, "totalCost": 0},
+                "week": {"chargerID": boot.name, "totalChargeCount": 0, "totalChargeTime": 0, "totalChargeQuantity": 0,
+                         "totalChargeCost": 0, "totalServiceCost": 0, "totalCost": 0},
+                "month": {"chargerID": boot.name, "totalChargeCount": 0, "totalChargeTime": 0, "totalChargeQuantity": 0,
+                          "totalChargeCost": 0, "totalServiceCost": 0, "totalCost": 0},
+                "all": {"chargerID": boot.name, "totalChargeCount": 0, "totalChargeTime": 0, "totalChargeQuantity": 0,
+                        "totalChargeCost": 0, "totalServiceCost": 0, "totalCost": 0}
+                }
             for i in table:
                 bill = table[i]
-                bill.Show()                               # 需修改，/ 3600
-                addDict = {"ChargeTime": (bill.end - bill.start) / 3600,"ChargeQuantity": bill.real_quantity,
-                           "ChargeCost": bill.chargecost,"ServiceCost": bill.servecost
-                          }
+                bill.Show()  # 需修改，/ 3600
+                addDict = {"ChargeTime": (bill.end - bill.start) / 3600, "ChargeQuantity": bill.real_quantity,
+                           "ChargeCost": bill.chargecost, "ServiceCost": bill.servecost
+                           }
                 passtime = now - bill.billTime / 1000
                 if passtime < 86400:
                     billday = self.tableAdd(billday, addDict)

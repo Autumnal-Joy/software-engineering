@@ -1,5 +1,7 @@
 FPN = 2
 TPN = 3
+
+
 class DB:
     def __init__(self, path):
         # 临时用
@@ -8,9 +10,9 @@ class DB:
             self.ChargerBillList["F" + str(i)] = {}
         for i in range(TPN):
             self.ChargerBillList["T" + str(i)] = {}
-        #print("ChargerBillList",self.ChargerBillList)
+        # print("ChargerBillList",self.ChargerBillList)
 
-    def Query(self,tablename: str, key: str):
+    def Query(self, tablename: str, key: str):
         # 前端测试密码为: 123456, 此处是MD5加密
         if tablename == "UserInfo":
             return {"username": key, "password": "e10adc3949ba59abbe56e057f20f883e"}
@@ -21,10 +23,10 @@ class DB:
         if tablename == "Report":
             return self.bill
 
-    def Insert(self,tablename: str, key: str, val: dict) -> bool:
+    def Insert(self, tablename: str, key: str, val: dict) -> bool:
         return True
 
-    def Delete(self,tablename: str, key: str) -> bool:
+    def Delete(self, tablename: str, key: str) -> bool:
         return True
 
     def Update(self, tablename: str, id: str, val: dict) -> bool:
@@ -34,4 +36,3 @@ class DB:
                 name = bill.chargeID
                 self.ChargerBillList[name][i] = bill
         return True
-
