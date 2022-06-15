@@ -1,6 +1,5 @@
 import logging
 import sys
-import time
 
 sys.path.append("..")
 
@@ -113,7 +112,6 @@ class Service:
             log
         ]
 
-
     """
     params
         username            用户名
@@ -133,25 +131,24 @@ class Service:
         table = self.db.Query("ChargerInfo", None)
         if chargerID[0] == 'T':
             if turn == "off":
-                self.SlowBoot[int(chargerID[1:])-1].shut()
-                print("******workingstate", self.SlowBoot[int(chargerID[1:])-1].working)
+                self.SlowBoot[int(chargerID[1:]) - 1].shut()
+                print("******workingstate", self.SlowBoot[int(chargerID[1:]) - 1].working)
             else:
-                self.SlowBoot[int(chargerID[1:])-1].start()
+                self.SlowBoot[int(chargerID[1:]) - 1].start()
         else:
             if turn == "off":
-                self.FastBoot[int(chargerID[1:])-1].shut()
+                self.FastBoot[int(chargerID[1:]) - 1].shut()
             else:
-                self.FastBoot[int(chargerID[1:])-1].start()
+                self.FastBoot[int(chargerID[1:]) - 1].start()
         if turn == 'off':
             log = "关闭"
         else:
             log = "打开"
         log = log + "充电桩" + chargerID
-        return data, err ,[
+        return data, err, [
             '开关充电桩成功',
             log
         ]
-
 
     """    
     params
@@ -182,9 +179,9 @@ class Service:
     def adminGetUsers(self, username, chargerID):
         data, err = [], None
         if chargerID[0] == 'T':
-            boot = self.SlowBoot[int(chargerID[1:])-1]
+            boot = self.SlowBoot[int(chargerID[1:]) - 1]
         else:
-            boot = self.FastBoot[int(chargerID[1:])-1]
+            boot = self.FastBoot[int(chargerID[1:]) - 1]
         table = boot.get_all_ord_now()
         for ord in table:
             # ord.show()
@@ -240,7 +237,7 @@ class Service:
         return table
 
     def adminGetTable(self, username: str):
-        #print("********now", 1)
+        # print("********now", 1)
         data, err = [], None
         BootList = []
         BootList.extend(self.FastBoot)
@@ -268,7 +265,7 @@ class Service:
                           "totalChargeCost": 0, "totalServiceCost": 0, "totalCost": 0},
                 "all": {"chargerID": boot.name, "totalChargeCount": 0, "totalChargeTime": 0, "totalChargeQuantity": 0,
                         "totalChargeCost": 0, "totalServiceCost": 0, "totalCost": 0}
-                }
+            }
             for i in table:
                 bill = table[i]
                 bill.Show()  # 需修改，/ 3600
@@ -303,7 +300,7 @@ class Service:
         print(billall)
 
         data = [billday, billweek, billmonth, billall]
-        return data, err,[
-            "查询报表成功" ,
+        return data, err, [
+            "查询报表成功",
             "无异常"
         ]

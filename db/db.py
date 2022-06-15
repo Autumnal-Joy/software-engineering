@@ -14,9 +14,9 @@ class DB:
     def __init__(self, path):
         # 临时用
         self.ChargerBillList = {}
-        for i in range(1,FPN+1):
+        for i in range(1, FPN + 1):
             self.ChargerBillList["F" + str(i)] = {}
-        for i in range(1,TPN+1):
+        for i in range(1, TPN + 1):
             self.ChargerBillList["T" + str(i)] = {}
         # print("ChargerBillList",self.ChargerBillList)
 

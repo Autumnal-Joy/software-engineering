@@ -1,8 +1,8 @@
-from threading import Timer
-import time
 import datetime
 import json
 import threading
+import time
+from threading import Timer
 
 FAST_SPEED = 0
 SLOW_SPEED = 0
@@ -260,7 +260,7 @@ class ChargeBoot:
     # 添加订单 外面控制了是否满 因此这里没必要控制
     def add(self, order: Order):
         order.aimed_end_time = (
-                                           self.Gettime() + self.CalcRealWaittime() + order.chargeQuantity / self.Charge_Speed) * 1000
+                                       self.Gettime() + self.CalcRealWaittime() + order.chargeQuantity / self.Charge_Speed) * 1000
         self.totalwait += order.chargeQuantity / self.Charge_Speed
         self.ServeQueue.push(order)
         if self.busy is False:

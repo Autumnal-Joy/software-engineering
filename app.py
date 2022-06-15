@@ -10,12 +10,13 @@
 
 '''
 import logging
+
 from flask import Flask, render_template, request
 
-import structure as st
-import user.service as us
 import admin.service as ms
 import db.db as db
+import structure as st
+import user.service as us
 
 '''
 
