@@ -75,7 +75,7 @@ class Bill:
             self.chargecost, self.servecost = self.Calc(FAST_SPEED if order.chargeType == 'fast' else SLOW_SPEED)
             self.totalcost = round(self.chargecost + self.servecost, 2)
             self.aimed_end_time = intTodatetime(int(order.aimed_end_time))
-            self.Show()
+            #self.Show()
         elif type(order) == dict:
             self.BillID = order["BillID"]
             self.chargeID = order["chargeID"]
@@ -553,8 +553,8 @@ class WaitArea:
 
     def fetch_first_fast_order(self):
         ans = self.emergency_fast_queue.pop()
-        print("emergency_fast_size", self.emergency_fast_queue.size)
-        print("Get", ans)
+        #print("emergency_fast_size", self.emergency_fast_queue.size)
+        #print("Get", ans)
         if ans is not None:
             del self.usr2num[ans.username]
             return ans
@@ -657,13 +657,13 @@ class PublicDataStruct:
 
     # 内部调度函数Schedule
     def Schedule(self):
-        print("准备调度")
-        print("size:", self.waitqueue.Wait_Queue.size, self.waitqueue.usr2num)
-        print("fast_ready", self.FastReadyQueue)
-        print("slow_ready", self.SlowReadyQueue)
+        #print("准备调度")
+        #("size:", self.waitqueue.Wait_Queue.size, self.waitqueue.usr2num)
+        #print("fast_ready", self.FastReadyQueue)
+        #print("slow_ready", self.SlowReadyQueue)
         self.mutex_wait_lock.acquire()
         self.fast_ready_lock.acquire()
-        print("开始调度快队列", self.waitqueue.fast_order_in_wait)
+        #print("开始调度快队列", self.waitqueue.fast_order_in_wait)
         while self.waitqueue.haswaitF() and len(self.FastReadyQueue):
             order = self.waitqueue.fetch_first_fast_order()
             # 找到waittotal最小的FastBoot
@@ -677,7 +677,7 @@ class PublicDataStruct:
             for i in range(0, len(self.FastReadyQueue)):
                 Totalwait.append(
                     max(0, self.FastBoot[self.FastReadyQueue[i]].CalcRealWaittime() + time.time() - t1))
-            print(Totalwait)
+            #print(Totalwait)
             for i in range(1, len(self.FastReadyQueue)):
                 if Totalwait[i] < Totalwait[sel]:
                     sel = i
@@ -694,7 +694,7 @@ class PublicDataStruct:
                 del self.FastReadyQueue[sel]
         self.fast_ready_lock.release()
         self.slow_ready_lock.acquire()
-        print("开始调度慢队列", self.waitqueue.slow_order_in_wait)
+        #print("开始调度慢队列", self.waitqueue.slow_order_in_wait)
         while self.waitqueue.haswaitS() and len(self.SlowReadyQueue):
             order = self.waitqueue.fetch_first_slow_order()
             if order is None:
