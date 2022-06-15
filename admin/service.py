@@ -33,6 +33,7 @@ class Service:
         self.Fast_Speed = pd.Fast_Speed
         self.Slow_Speed = pd.Slow_Speed
         self.Schedule = pd.Schedule
+        self.Gettime = pd.Gettime
 
     def debug(self):
         print("userord:", self.usr2ord)
@@ -65,7 +66,10 @@ class Service:
             err = "用户名或密码错误"
         else:
             data = {"status": True}
-        return data, err
+        return data, err, [
+            '管理员登录成功',
+            '用户名:{}, 密码:{}'.format(username, password)
+        ]
 
     """
     params
@@ -103,7 +107,12 @@ class Service:
             Info = {"chargerID": boot.name, "working": boot.working, "totalChargeCount": totalChargeCount,
                     "totalChargeTime": totalChargeTime, "totalChargeQuantity": totalChargeQuantity}
             data.append(Info)
-        return data, err
+        log = "查询到" + str(len(BootList)) + "个充电桩"
+        return data, err, [
+            '查询充电桩成功',
+            log
+        ]
+
 
     """
     params
@@ -124,16 +133,25 @@ class Service:
         table = self.db.Query("ChargerInfo", None)
         if chargerID[0] == 'T':
             if turn == "off":
-                self.SlowBoot[int(chargerID[1:])].shut()
-                print("******workingstate", self.SlowBoot[int(chargerID[1:])].working)
+                self.SlowBoot[int(chargerID[1:])-1].shut()
+                print("******workingstate", self.SlowBoot[int(chargerID[1:])-1].working)
             else:
-                self.SlowBoot[int(chargerID[1:])].start()
+                self.SlowBoot[int(chargerID[1:])-1].start()
         else:
             if turn == "off":
-                self.FastBoot[int(chargerID[1:])].shut()
+                self.FastBoot[int(chargerID[1:])-1].shut()
             else:
-                self.FastBoot[int(chargerID[1:])].start()
-        return data, err
+                self.FastBoot[int(chargerID[1:])-1].start()
+        if turn == 'off':
+            log = "关闭"
+        else:
+            log = "打开"
+        log = log + "充电桩" + chargerID
+        return data, err ,[
+            '开关充电桩成功',
+            log
+        ]
+
 
     """    
     params
@@ -164,16 +182,16 @@ class Service:
     def adminGetUsers(self, username, chargerID):
         data, err = [], None
         if chargerID[0] == 'T':
-            boot = self.SlowBoot[int(chargerID[1:])]
+            boot = self.SlowBoot[int(chargerID[1:])-1]
         else:
-            boot = self.FastBoot[int(chargerID[1:])]
+            boot = self.FastBoot[int(chargerID[1:])-1]
         table = boot.get_all_ord_now()
         for ord in table:
             # ord.show()
             info = {}
             info["username"] = ord.username
             info["chargeQuantity"] = ord.chargeQuantity
-            now = time.time()
+            now = self.Gettime()
             begin = ord.createtime
             info["waitingTime"] = (now - begin) * 1000
             data.append(info)
@@ -183,7 +201,11 @@ class Service:
             # print("waittimg",(now - begin) / 3600)
         # print("*******table", table)
         # print("******data",data)
-        return data, err
+        log = "充电桩" + chargerID + "正在服务" + str(len(data)) + "个用户"
+        return data, err, [
+            '开关充电桩成功',
+            log
+        ]
 
     """
     params
@@ -218,7 +240,7 @@ class Service:
         return table
 
     def adminGetTable(self, username: str):
-        print("********now", 1)
+        #print("********now", 1)
         data, err = [], None
         BootList = []
         BootList.extend(self.FastBoot)
@@ -233,7 +255,7 @@ class Service:
         billall = {"time": "总共", "totalChargeCount": 0, "totalChargeTime": 0, "totalChargeQuantity": 0,
                    "totalChargeCost": 0, "totalServiceCost": 0, "totalCost": 0, "chargers": []}
         bootbilltable = {}
-        now = time.time()
+        now = self.Gettime()
 
         for boot in BootList:
             table = self.db.Query("ChargerBillList", boot.name)
@@ -281,4 +303,7 @@ class Service:
         print(billall)
 
         data = [billday, billweek, billmonth, billall]
-        return data, err
+        return data, err,[
+            "查询报表成功" ,
+            "无异常"
+        ]
