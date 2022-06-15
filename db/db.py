@@ -1,5 +1,13 @@
+import logging
+
 FPN = 2
 TPN = 3
+
+'''
+log.info("message")
+'''
+
+log = logging.getLogger('app')
 
 
 class DB:

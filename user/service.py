@@ -1,4 +1,5 @@
 import sys
+import logging
 
 sys.path.append("..")
 from structure import Order
@@ -10,14 +11,10 @@ from structure import Order
 
 
 '''
-@2022/06/12 董文阔：service的每一个返回值在data 和 err 后边还有一个log列表，规则是这样
-log[0]是成功时log信息，表示用户请求服务成功，
-log[1]是只要调用函数就会log的信息，无论成功或失败，一般来说就应该是请求的参数
-最后的log大致就是:
-        请求成功: log[0] + ', ' + log[1]
-        请求失败: err    + ', ' + log[1]
-不过我只写了service层次的log，你如果想要添加更底层的log，可能需要拼接一下这个字符串
+log.info("message")
 '''
+
+log = logging.getLogger('app')
 
 
 class Service:
@@ -38,6 +35,7 @@ class Service:
         self.Slow_Speed = pd.Slow_Speed
         self.Schedule = pd.Schedule
         self.Gettime = pd.Gettime
+
     """ 
     params
         username            用户名
@@ -59,7 +57,7 @@ class Service:
             data = {"status": True}
 
         if err is not None:
-            return data,err,[
+            return data, err, [
                 '登录失败',
                 '登录失败,错误原因:{}'.format(err)
             ]
@@ -93,7 +91,7 @@ class Service:
             if self.db.Insert("UserInfo", username, table) is False:
                 data, err = None, "数据库载入错误"
         if err is not None:
-            return data,err,[
+            return data, err, [
                 '注册失败',
                 '注册失败,错误原因{}'.format(err)
             ]
@@ -120,7 +118,7 @@ class Service:
         if username in self.usr2ord:
             data, err = None, "用户已经预约过"
         else:
-            new_ord = Order(username, chargeType, chargeQuantity,self.Gettime)
+            new_ord = Order(username, chargeType, chargeQuantity, self.Gettime)
             res = self.waitqueue.addord(new_ord)
             if res is False:
                 data, err = None, "等待区满，预约被拒绝"
@@ -155,7 +153,7 @@ class Service:
             data["chargeType"] = self.usr2ord[username].chargeType
             data["chargeQuantity"] = self.usr2ord[username].chargeQuantity
         if err is not None:
-            return data,err,[
+            return data, err, [
                 '查询订单失败',
                 '查询订单失败,错误原因{}'.format(err)
             ]
@@ -180,7 +178,7 @@ class Service:
         else:
             data["lineNo"] = self.usr2ord[username].serialnum
         if err is not None:
-            return data,err,[
+            return data, err, [
                 '查询排号失败',
                 '查询排号失败,错误原因{}'.format(err)
             ]
@@ -212,7 +210,7 @@ class Service:
                 data["rank"] = ans + 1
                 data["endingTime"] = -1
         if err is not None:
-            return data,err,[
+            return data, err, [
                 '查询Rank失败',
                 '查询Rank失败,错误原因{}'.format(err)
             ]
@@ -242,9 +240,9 @@ class Service:
             data, err = None, "订单不在等候区,请求被拒绝"
         else:
             self.waitqueue.delord(username)
-            data, err , log = self.userSendOrder(username, chargeType, chargeQuantity)
+            data, err, log = self.userSendOrder(username, chargeType, chargeQuantity)
         if err is not None:
-            return data,err,[
+            return data, err, [
                 '修改充电方式失败',
                 '修改充电方式失败,错误原因{}'.format(err)
             ]
@@ -274,7 +272,7 @@ class Service:
         else:
             self.waitqueue.change_quantity(username, chargeQuantity)
         if err is not None:
-            return data,err,[
+            return data, err, [
                 '修改充电量失败',
                 '修改充电量失败,错误原因{}'.format(err)
             ]
@@ -313,11 +311,11 @@ class Service:
             if self.waitqueue.delord(username) is False:  # 订单刚刚调度到服务队列去
                 return self.userSendCancelCharge(username)
             else:
-                #print(username)
-                #print(self.usr2ord)
+                # print(username)
+                # print(self.usr2ord)
                 del self.usr2ord[username]
         if err is not None:
-            return data,err,[
+            return data, err, [
                 '取消失败',
                 '取消失败,错误原因{}'.format(err)
             ]
@@ -386,9 +384,9 @@ class Service:
                 break
         else:
             data, err = None, "该用户没有该billID的账单"
-            #print(data)
+            # print(data)
         if err is not None:
-            return data,err,[
+            return data, err, [
                 '获取账单失败',
                 '获取账单失败,错误原因{}'.format(err)
             ]
