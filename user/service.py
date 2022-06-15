@@ -133,7 +133,7 @@ class Service:
                 '预约失败,错误原因{}'.format(err)
             ]
         return data, err, [
-            '预约成功, 号码:{}'.format(new_ord),
+            '预约成功, 号码:{}'.format(new_ord.serialnum),
             '用户名:{}, 类型:{}, 充电量:{}度'.format(username, chargeType, chargeQuantity)
         ]
 
@@ -242,6 +242,7 @@ class Service:
             data, err = None, "订单不在等候区,请求被拒绝"
         else:
             self.waitqueue.delord(username)
+            del self.usr2ord[username]
             data, err , log = self.userSendOrder(username, chargeType, chargeQuantity)
         if err is not None:
             return data,err,[
