@@ -734,7 +734,7 @@ class PublicDataStruct:
                 elif math.fabs(Totalwait[i] - mi) < 1e-6:
                     sel.append(i)
             for i in sel:
-                if self.FastBoot[self.FastReadyQueue[i]].isFull() is False:
+                if self.FastBoot[self.SlowReadyQueue[i]].isFull() is False:
                     sel = i
                     break
             else:
