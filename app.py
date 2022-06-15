@@ -143,13 +143,13 @@ def resp():
         return ErrorTemplate(ParametersNotExpected)
 
     if method == "userLogin":
-        result, err, _ = userService.userLogin(**user)
+        result, err = userService.userLogin(**user)
 
     elif method == "userRegister":
-        result, err, _ = userService.userRegister(**user)
+        result, err = userService.userRegister(**user)
 
     elif method == "adminLogin":
-        result, err, _ = adminService.adminLogin(**user)
+        result, err = adminService.adminLogin(**user)
 
     else:
         params.pop('password', None)
@@ -157,10 +157,10 @@ def resp():
         try:
             if method.startswith("user"):
                 fn = getattr(userService, method)
-                result, err, _ = fn(**params)
+                result, err = fn(**params)
             elif method.startswith("admin"):
                 fn = getattr(adminService, method)
-                result, err, _ = fn(**params)
+                result, err = fn(**params)
             else:
                 err = MethodNotFound
         except AttributeError:
@@ -178,6 +178,9 @@ if __name__ == '__main__':
 
     log = logging.getLogger('werkzeug')
     log.setLevel(logging.ERROR)
+
+    log = logging.getLogger('app')
+    log.setLevel(logging.INFO)
 
     app.debug = True
     app.run(port=8081)
