@@ -181,19 +181,17 @@ class ChargeBoot:
             self.ReadyQueue.append(self.rank)
         self.ready_queue_lock.release()
         self.working = True
-
+        log.info("充电桩{}开机".format(self.name))
     # 关机，故障，其他均摊
     # 将在队列中的拿出去
     # 将队列中的全部拿出去
     def shut(self) -> list:
         # 从ReadyQueue中删除
         self.ready_queue_lock.acquire()
-        # xmx修改过#之前del self.ReadyQueue[i]长度减小导致i越界
-        del_cnt = 0
         for i in range(0, len(self.ReadyQueue)):
-            if self.ReadyQueue[i - del_cnt] == self.rank:
+            if self.ReadyQueue[i] == self.rank:
                 del self.ReadyQueue[i]
-                del_cnt = del_cnt + 1
+                break
         self.ready_queue_lock.release()
         ans = []
         if self.busy:
@@ -220,6 +218,7 @@ class ChargeBoot:
         while self.ServeQueue.size:
             ans.append(self.ServeQueue.pop())
         self.working = False
+        log.info("充电桩{}关机".format(self.name))
         return ans
 
     # 添加订单 外面控制了是否满 因此这里没必要控制
