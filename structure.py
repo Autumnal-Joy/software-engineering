@@ -75,7 +75,7 @@ class Bill:
             self.chargecost, self.servecost = self.Calc(FAST_SPEED if order.chargeType == 'F' else SLOW_SPEED)
             self.totalcost = round(self.chargecost + self.servecost, 2)
             self.aimed_end_time = intTodatetime(int(order.aimed_end_time))
-            self.Show()
+            #self.Show()
         elif type(order) == dict:
             self.BillID = order["BillID"]
             self.chargeID = order["chargeID"]
@@ -198,7 +198,7 @@ class ChargeBoot:
         self.rank = rank
         self.Schedule = Schedule
         self.usr2ord = usr2ord
-        self.name = type + str(rank)
+        self.name = type + str(rank + 1)
         self.working = True
         self.Gettime = Gettime
         self.time_acc = time_acc
@@ -553,8 +553,8 @@ class WaitArea:
 
     def fetch_first_fast_order(self):
         ans = self.emergency_fast_queue.pop()
-        print("emergency_fast_size", self.emergency_fast_queue.size)
-        print("Get", ans)
+        #print("emergency_fast_size", self.emergency_fast_queue.size)
+        #print("Get", ans)
         if ans is not None:
             del self.usr2num[ans.username]
             return ans
@@ -657,13 +657,13 @@ class PublicDataStruct:
 
     # 内部调度函数Schedule
     def Schedule(self):
-        print("准备调度")
-        print("size:", self.waitqueue.Wait_Queue.size, self.waitqueue.usr2num)
-        print("fast_ready", self.FastReadyQueue)
-        print("slow_ready", self.SlowReadyQueue)
+        #print("准备调度")
+        #("size:", self.waitqueue.Wait_Queue.size, self.waitqueue.usr2num)
+        #print("fast_ready", self.FastReadyQueue)
+        #print("slow_ready", self.SlowReadyQueue)
         self.mutex_wait_lock.acquire()
         self.fast_ready_lock.acquire()
-        print("开始调度快队列", self.waitqueue.fast_order_in_wait)
+        #print("开始调度快队列", self.waitqueue.fast_order_in_wait)
         while self.waitqueue.haswaitF() and len(self.FastReadyQueue):
             order = self.waitqueue.fetch_first_fast_order()
             # 找到waittotal最小的FastBoot
@@ -677,24 +677,24 @@ class PublicDataStruct:
             for i in range(0, len(self.FastReadyQueue)):
                 Totalwait.append(
                     max(0, self.FastBoot[self.FastReadyQueue[i]].CalcRealWaittime() + time.time() - t1))
-            print(Totalwait)
+            #print(Totalwait)
             for i in range(1, len(self.FastReadyQueue)):
                 if Totalwait[i] < Totalwait[sel]:
                     sel = i
             order.status = "S_F" + str(self.FastReadyQueue[sel])
-            order.chargeID = 'F' + str(self.FastReadyQueue[sel])
+            order.chargeID = 'F' + str(self.FastReadyQueue[sel]+1)
             print("调度成功，将订单(username:{},chargetype:{},chargeQuantity:{})加入了充电桩F{}的服务队列...".format(order.username,
                                                                                                   order.chargeType,
                                                                                                   order.chargeQuantity,
                                                                                                   self.FastReadyQueue[
-                                                                                                      sel]))
+                                                                                                      sel]+1))
             self.FastBoot[self.FastReadyQueue[sel]].add(order)
             # 检测如果充电桩满了就删除
             if self.FastBoot[self.FastReadyQueue[sel]].isFull():
                 del self.FastReadyQueue[sel]
         self.fast_ready_lock.release()
         self.slow_ready_lock.acquire()
-        print("开始调度慢队列", self.waitqueue.slow_order_in_wait)
+        #print("开始调度慢队列", self.waitqueue.slow_order_in_wait)
         while self.waitqueue.haswaitS() and len(self.SlowReadyQueue):
             order = self.waitqueue.fetch_first_slow_order()
             if order is None:
@@ -712,12 +712,12 @@ class PublicDataStruct:
                 if Totalwait[i] < Totalwait[sel]:
                     sel = i
             order.status = "S_T" + str(self.SlowReadyQueue[sel])
-            order.chargeID = 'T' + str(self.SlowReadyQueue[sel])
+            order.chargeID = 'T' + str(self.SlowReadyQueue[sel]+1)
             print("调度成功，将订单(username:{},chargetype:{},chargeQuantity:{})加入了充电桩T{}的服务队列...".format(order.username,
                                                                                                   order.chargeType,
                                                                                                   order.chargeQuantity,
                                                                                                   self.SlowReadyQueue[
-                                                                                                      sel]))
+                                                                                                      sel]+1))
             self.SlowBoot[self.SlowReadyQueue[sel]].add(order)
             if self.SlowBoot[self.SlowReadyQueue[sel]].isFull():
                 del self.SlowReadyQueue[sel]

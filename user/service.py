@@ -386,7 +386,7 @@ class Service:
                 break
         else:
             data, err = None, "该用户没有该billID的账单"
-            print(data)
+            #print(data)
         if err is not None:
             return data,err,[
                 '获取账单失败',
