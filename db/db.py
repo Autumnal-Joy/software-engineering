@@ -1,6 +1,5 @@
 from ast import main
 import os, json
-from ast import main
 '''
 2022/06/15: 董文阔
 
