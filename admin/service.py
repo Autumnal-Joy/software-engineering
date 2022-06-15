@@ -65,10 +65,8 @@ class Service:
             err = "用户名或密码错误"
         else:
             data = {"status": True}
-        return data, err, [
-            '管理员登录成功',
-            '用户名:{}, 密码:{}'.format(username, password)
-        ]
+        log.info("管理员" + username + ": 登录成功")
+        return data, err
 
     """
     params
@@ -106,11 +104,8 @@ class Service:
             Info = {"chargerID": boot.name, "working": boot.working, "totalChargeCount": totalChargeCount,
                     "totalChargeTime": totalChargeTime, "totalChargeQuantity": totalChargeQuantity}
             data.append(Info)
-        log = "查询到" + str(len(BootList)) + "个充电桩"
-        return data, err, [
-            '查询充电桩成功',
-            log
-        ]
+        log.info("管理员" + username + ": 查询充电桩成功")
+        return data, err
 
     """
     params
@@ -141,14 +136,12 @@ class Service:
             else:
                 self.FastBoot[int(chargerID[1:]) - 1].start()
         if turn == 'off':
-            log = "关闭"
+            logtxt = ": 关闭"
         else:
-            log = "打开"
-        log = log + "充电桩" + chargerID
-        return data, err, [
-            '开关充电桩成功',
-            log
-        ]
+            logtxt = ": 打开"
+        logtxt = logtxt + "充电桩" + chargerID
+        log.info("管理员" + username + logtxt)
+        return data, err
 
     """    
     params
@@ -198,12 +191,8 @@ class Service:
             # print("waittimg",(now - begin) / 3600)
         # print("*******table", table)
         # print("******data",data)
-        log = "充电桩" + chargerID + "正在服务" + str(len(data)) + "个用户"
-        return data, err, [
-            '开关充电桩成功',
-            log
-        ]
-
+        log.info("管理员" + username + ": 查询充电桩" + chargerID + "服务用户成功")
+        return data, err
     """
     params
         username            用户名
@@ -300,7 +289,5 @@ class Service:
         print(billall)
 
         data = [billday, billweek, billmonth, billall]
-        return data, err, [
-            "查询报表成功",
-            "无异常"
-        ]
+        log.info("管理员" + username + ": 查看报表成功")
+        return data, err
