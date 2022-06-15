@@ -1,5 +1,5 @@
 export { default as Admin } from "./admin/Admin";
-export { default as Back } from "./back/Back";
+export { default as Back } from "../components/back/Back";
 export { default as Bills } from "./bills/Bills";
 export { default as Chargers } from "./chargers/Chargers";
 export { default as Login } from "./login/Login";

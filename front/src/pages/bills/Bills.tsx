@@ -2,13 +2,13 @@ import { BackTop, Card, Descriptions, Drawer, List, message } from "antd";
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../../components/UserManager";
 import { post } from "../../utils/net";
-import Back from "../back/Back";
+import Back from "../../components/back/Back";
 import "./Bills.css";
 
 interface BillInfo {
   billID: number;
   billTime: number;
-  chargerID: number;
+  chargerID: string;
   chargeQuantity: number;
   chargeTime: number;
   startTime: number;
