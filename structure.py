@@ -4,6 +4,7 @@ import datetime
 import json
 import threading
 import logging
+import math
 FAST_SPEED = 0
 SLOW_SPEED = 0
 
@@ -98,7 +99,7 @@ class Bill:
             "totalcost": self.totalcost,
             "aimed_end_time": self.aimed_end_time
         }
-        return
+        return ans
 
         # 计算费用
 
@@ -176,10 +177,7 @@ class ChargeBoot:
 
     # 开机，均摊
     def start(self):
-        self.ready_queue_lock.acquire()
-        if self.rank not in self.ReadyQueue:
-            self.ReadyQueue.append(self.rank)
-        self.ready_queue_lock.release()
+        self.totalwait = 0
         self.working = True
         log.info("充电桩{}开机".format(self.name))
     # 关机，故障，其他均摊
@@ -188,10 +186,8 @@ class ChargeBoot:
     def shut(self) -> list:
         # 从ReadyQueue中删除
         self.ready_queue_lock.acquire()
-        for i in range(0, len(self.ReadyQueue)):
-            if self.ReadyQueue[i] == self.rank:
-                del self.ReadyQueue[i]
-                break
+        #设置等待时间无限大
+        self.totalwait = 0x3f3f3f3f
         self.ready_queue_lock.release()
         ans = []
         if self.busy:
@@ -203,14 +199,22 @@ class ChargeBoot:
                 bill = Bill(head, self.Gettime,1)
                 self.usr2bill[head.username].append(bill)
                 table = self.db.Query("ChargerBillList", self.name)
-                table[str(int(self.Gettime())) + '_' + str(bill.BillID)] = bill
+                table[str(int(self.Gettime())) + '_' + str(bill.BillID)] = bill.todict()
                 self.db.Update("ChargerBillList", self.name, table)
+
+                table = self.db.Query("UserBillList", ord.username)
+                table[str(int(self.Gettime())) + '_' + str(bill.BillID)] = bill.todict()
+                self.db.Update("UserBillList", ord.username, table)
             else:
                 bill = Bill(head,self.Gettime,1)
                 self.usr2bill[head.username] = [bill]
                 table = self.db.Query("ChargerBillList", self.name)
-                table[str(int(self.Gettime())) + '_' + str(bill.BillID)] = bill
+                table[str(int(self.Gettime())) + '_' + str(bill.BillID)] = bill.todict()
                 self.db.Update("ChargerBillList", self.name, table)
+
+                table = self.db.Query("UserBillList", ord.username)
+                table[str(int(self.Gettime())) + '_' + str(bill.BillID)] = bill.todict()
+                self.db.Update("UserBillList", ord.username, table)
             del self.timers[head.username]
             # 结算正在进行的
             ans.append(Order(head.username, head.chargeType,
@@ -266,23 +270,27 @@ class ChargeBoot:
             bill = Bill(ord, self.Gettime, cancel)
             self.usr2bill[ord.username].append(bill)
             table = self.db.Query("ChargerBillList", self.name)
-            table[str(int(self.Gettime())) + '_' + str(bill.BillID)] = bill
+            table[str(int(self.Gettime())) + '_' + str(bill.BillID)] = bill.todict()
             self.db.Update("ChargerBillList", self.name, table)
+
+            table = self.db.Query("UserBillList",ord.username)
+            table[str(int(self.Gettime())) + '_' + str(bill.BillID)] = bill.todict()
+            self.db.Update("UserBillList",ord.username,table)
         else:
             bill = Bill(ord,self.Gettime,cancel)
             self.usr2bill[ord.username] = [bill]
             table = self.db.Query("ChargerBillList", self.name)
-            table[str(int(self.Gettime())) + '_' + str(bill.BillID)] = bill
+            table[str(int(self.Gettime())) + '_' + str(bill.BillID)] = bill.todict()
             self.db.Update("ChargerBillList", self.name, table)
+
+            table = self.db.Query("UserBillList", ord.username)
+            table[str(int(self.Gettime())) + '_' + str(bill.BillID)] = bill.todict()
+            self.db.Update("UserBillList", ord.username, table)
         self.busy = False
         del self.timers[ord.username]
         del self.usr2ord[ord.username]
         # 继续服务下一个订单
         self.consume()
-        self.ready_queue_lock.acquire()
-        if self.rank not in self.ReadyQueue:
-            self.ReadyQueue.append(self.rank)
-        self.ready_queue_lock.release()
         if cancel == 0:
             log.info("user \"{}\" 的订单(type:{},quantity{})在充电桩{}执行完毕".format(ord.username,ord.chargeType,ord.chargeQuantity,self.name))
         else:
@@ -306,6 +314,7 @@ class ChargeBoot:
         t = self.ServeQueue.cancel(username)
         if t is True:
             ord = self.usr2ord[username]
+            self.totalwait -= ord.chargeQuantity / self.Charge_Speed
             msg = '订单({},{},{})取消成功'.format(ord.username,ord.chargeType,ord.chargeQuantity)
             allord = self.ServeQueue.peek_all()
             msg += "充电桩{}现有订单:[ ".format(self.name)
@@ -318,6 +327,8 @@ class ChargeBoot:
 
     # 计算实时全队等待时间
     def CalcRealWaittime(self):
+        if self.totalwait == 0x3f3f3f3f:
+            return 0x3f3f3f3f
         top = self.ServeQueue.peek()
         if top is None:
             return self.totalwait
@@ -545,6 +556,30 @@ class WaitArea:
         log.info(msg)
         return True
 
+    def touch_first_fast_order(self):
+        ans = self.emergency_fast_queue.peek()
+        if ans is not None:
+            return ans
+        cur = self.Wait_Queue.head
+        while cur is not None and cur.order.chargeType != 'fast':
+            cur = cur.next
+        if cur is None:
+            return None
+        ans = cur.order
+        return ans
+
+    def touch_first_slow_order(self):
+        ans = self.emergency_slow_queue.peek()
+        if ans is not None:
+            return ans
+        cur = self.Wait_Queue.head
+        while cur is not None and cur.order.chargeType != 'slow':
+            cur = cur.next
+        if cur is None:
+            return None
+        ans = cur.order
+        return ans
+
     def fetch_first_fast_order(self):
         ans = self.emergency_fast_queue.pop()
         if ans is not None:
@@ -616,6 +651,7 @@ class PublicDataStruct:
         self.waitqueue = WaitArea(self.N, self.mutex_wait_lock)
         self.fast_ready_lock = threading.Lock()
         self.slow_ready_lock = threading.Lock()
+        #readyqueue = [{i}]
         self.FastReadyQueue = [i for i in range(0, self.FPN)]
         self.SlowReadyQueue = [i for i in range(0, self.TPN)]
         self.FastBoot = [
@@ -635,11 +671,12 @@ class PublicDataStruct:
         self.mutex_wait_lock.acquire()
         self.fast_ready_lock.acquire()
         while self.waitqueue.haswaitF() and len(self.FastReadyQueue):
-            order = self.waitqueue.fetch_first_fast_order()
+            order = self.waitqueue.touch_first_fast_order()
             # 找到waittotal最小的FastBoot
             if order is None:
                 break  # 为了互斥锁
-            sel = 0
+            sel = []
+            mi = 0x3f3f3f3f
             # 得到所有有空位同一时刻的FastBoot的实时totalwait
             Totalwait = []
             # 记录最开始的time
@@ -647,9 +684,23 @@ class PublicDataStruct:
             for i in range(0, len(self.FastReadyQueue)):
                 Totalwait.append(
                     max(0, self.FastBoot[self.FastReadyQueue[i]].CalcRealWaittime() + time.time() - t1))
-            for i in range(1, len(self.FastReadyQueue)):
-                if Totalwait[i] < Totalwait[sel]:
+            for i in range(0, len(self.FastReadyQueue)):
+                print("充电桩{}的totalwait:{}",self.FastBoot[self.FastReadyQueue[i]].name,Totalwait[i])
+                if Totalwait[i] == 0x3f3f3f3f:
+                    continue
+                elif Totalwait[i] < mi:
+                    sel = [i]
+                    mi = Totalwait[i]
+                elif math.fabs(Totalwait[i] - mi) < 1e-6:
+                    sel.append(i)
+            for i in sel:
+                if self.FastBoot[self.FastReadyQueue[i]].isFull() is False:
                     sel = i
+                    break
+            else:
+                print("充电桩{}满了".format(self.FastBoot[self.FastReadyQueue[sel[0]]].name))
+                break
+            order = self.waitqueue.fetch_first_fast_order()
             order.status = "S_F" + str(self.FastReadyQueue[sel])
             order.chargeID = 'F' + str(self.FastReadyQueue[sel]+1)
             log.info("调度成功，将订单(username:{},chargetype:{},chargeQuantity:{})加入了充电桩F{}的服务队列...".format(order.username,
@@ -658,17 +709,15 @@ class PublicDataStruct:
                                                                                                   self.FastReadyQueue[
                                                                                                       sel]+1))
             self.FastBoot[self.FastReadyQueue[sel]].add(order)
-            # 检测如果充电桩满了就删除
-            if self.FastBoot[self.FastReadyQueue[sel]].isFull():
-                del self.FastReadyQueue[sel]
         self.fast_ready_lock.release()
         self.slow_ready_lock.acquire()
         while self.waitqueue.haswaitS() and len(self.SlowReadyQueue):
-            order = self.waitqueue.fetch_first_slow_order()
+            order = self.waitqueue.touch_first_slow_order()
             if order is None:
                 break  # 为了互斥锁
             # 找到waittotal最小的FastBoot
-            sel = 0
+            sel = []
+            mi = 0x3f3f3f3f
             # 得到所有有空位同一时刻的SlowBoot的实时totalwait
             Totalwait = []
             # 记录最开始的time
@@ -677,8 +726,20 @@ class PublicDataStruct:
                 Totalwait.append(
                     max(0, self.SlowBoot[self.SlowReadyQueue[i]].CalcRealWaittime() + time.time() - t1))
             for i in range(0, len(self.SlowReadyQueue)):
-                if Totalwait[i] < Totalwait[sel]:
+                if Totalwait[i] == 0x3f3f3f3f:
+                    continue
+                elif Totalwait[i] < mi:
+                    sel = [i]
+                    mi = Totalwait[i]
+                elif math.fabs(Totalwait[i] - mi) < 1e-6:
+                    sel.append(i)
+            for i in sel:
+                if self.FastBoot[self.FastReadyQueue[i]].isFull() is False:
                     sel = i
+                    break
+            else:
+                break
+            order = self.waitqueue.fetch_first_slow_order()
             order.status = "S_T" + str(self.SlowReadyQueue[sel])
             order.chargeID = 'T' + str(self.SlowReadyQueue[sel]+1)
             log.info("调度成功，将订单(username:{},chargetype:{},chargeQuantity:{})加入了充电桩T{}的服务队列...".format(order.username,
@@ -687,8 +748,6 @@ class PublicDataStruct:
                                                                                                   self.SlowReadyQueue[
                                                                                                       sel]+1))
             self.SlowBoot[self.SlowReadyQueue[sel]].add(order)
-            if self.SlowBoot[self.SlowReadyQueue[sel]].isFull():
-                del self.SlowReadyQueue[sel]
         self.slow_ready_lock.release()
         self.mutex_wait_lock.release()
         msg = "现在的等候区:[ "

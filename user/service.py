@@ -47,7 +47,10 @@ class Service:
             err = "用户名或密码错误"
         else:
             data = {"status": True}
-        log.info("user:\"{}\"登入成功".format(username))
+        if err is None:
+            log.info("user:\"{}\"登入成功".format(username))
+        else:
+            log.info("user:\"{}\"登入失败,err = {}".format(username,err))
         return data, err
 
     """ 
@@ -74,7 +77,10 @@ class Service:
             }
             if self.db.Insert("UserInfo", username, table) is False:
                 data, err = None, "数据库载入错误"
-        log.info("user:\"{}\"注册成功".format(username))
+        if err is None:
+            log.info("user:\"{}\"注册成功".format(username))
+        else:
+            log.info("user:\"{}\"注册失败,err = {}".format(username,err))
         return data, err
 
     """ 
@@ -102,7 +108,10 @@ class Service:
             else:
                 self.usr2ord[username] = new_ord
                 self.Schedule()
-        log.info("user:\"{}\"预约成功".format(username))
+        if err is None:
+            log.info("user:\"{}\"预约成功".format(username))
+        else:
+            log.info("user:\"{}\"预约失败,err{}".format(username,err))
         return data, err
 
     """ 
@@ -245,7 +254,11 @@ class Service:
                 return self.userSendCancelCharge(username)
             else:
                 del self.usr2ord[username]
-        log.info("user:\"{}\"取消了订单".format(username))
+        if err is None:
+            log.info("user:\"{}\"取消了订单".format(username))
+            self.Schedule()
+        else:
+            log.info("user:\"{}\"取消失败,err = {}".format(username,err))
         return data, err
     """ 
     params
