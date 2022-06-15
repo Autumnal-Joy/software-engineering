@@ -198,7 +198,7 @@ class ChargeBoot:
         self.rank = rank
         self.Schedule = Schedule
         self.usr2ord = usr2ord
-        self.name = type + str(rank)
+        self.name = type + str(rank + 1)
         self.working = True
         self.Gettime = Gettime
         self.time_acc = time_acc
@@ -682,12 +682,12 @@ class PublicDataStruct:
                 if Totalwait[i] < Totalwait[sel]:
                     sel = i
             order.status = "S_F" + str(self.FastReadyQueue[sel])
-            order.chargeID = 'F' + str(self.FastReadyQueue[sel])
+            order.chargeID = 'F' + str(self.FastReadyQueue[sel]+1)
             print("调度成功，将订单(username:{},chargetype:{},chargeQuantity:{})加入了充电桩F{}的服务队列...".format(order.username,
                                                                                                   order.chargeType,
                                                                                                   order.chargeQuantity,
                                                                                                   self.FastReadyQueue[
-                                                                                                      sel]))
+                                                                                                      sel]+1))
             self.FastBoot[self.FastReadyQueue[sel]].add(order)
             # 检测如果充电桩满了就删除
             if self.FastBoot[self.FastReadyQueue[sel]].isFull():
@@ -712,12 +712,12 @@ class PublicDataStruct:
                 if Totalwait[i] < Totalwait[sel]:
                     sel = i
             order.status = "S_T" + str(self.SlowReadyQueue[sel])
-            order.chargeID = 'T' + str(self.SlowReadyQueue[sel])
+            order.chargeID = 'T' + str(self.SlowReadyQueue[sel]+1)
             print("调度成功，将订单(username:{},chargetype:{},chargeQuantity:{})加入了充电桩T{}的服务队列...".format(order.username,
                                                                                                   order.chargeType,
                                                                                                   order.chargeQuantity,
                                                                                                   self.SlowReadyQueue[
-                                                                                                      sel]))
+                                                                                                      sel]+1))
             self.SlowBoot[self.SlowReadyQueue[sel]].add(order)
             if self.SlowBoot[self.SlowReadyQueue[sel]].isFull():
                 del self.SlowReadyQueue[sel]
