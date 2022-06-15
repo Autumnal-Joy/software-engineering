@@ -24,12 +24,19 @@ class DB:
     # 读取文件的方法，如果没有该文件，则创建，并加载json到内存中去
     def Read(self, table):
         self.table = table
+        file = ""
+
         if self.path == None:
-            open(table + '.json', 'w')
-            j = open(table + '.json', 'r').read()
+            file = table + '.json'
         else:
-            open(os.path.join(self.path, table + ".json"), 'w')
-            j = open(os.path.join(self.path, table + ".json"), 'r').read()
+            file = os.path.join(self.path, table + ".json")
+
+        if os.path.exists(file):
+            j = open(file, 'r').read()
+        else:
+            open(file, 'w')
+            j = ""
+
         if len(j) == 0:
             self.buf = dict()
         else:
@@ -77,11 +84,12 @@ class DB:
 
     def Update(self, tablename, key, value) -> bool:
         self.Load(tablename)
-        if key in self.buf.keys():
-            self.buf[key] = value
-            return True
-        else:
-            return False
+        # if key in self.buf.keys():
+        self.buf[key] = value
+        return True
+        # else:
+        #     return False
+
 
 
 '''
