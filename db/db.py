@@ -1,6 +1,6 @@
 from ast import main
 import os, json
-
+from ast import main
 '''
 2022/06/15: 董文阔
 
@@ -65,7 +65,7 @@ class DB:
         self.Load(tablename)
         if key in self.buf.keys():
             return self.buf[key]
-        return None
+        return dict()
 
     def Insert(self, tablename, key, value) -> bool:
         self.Load(tablename)
