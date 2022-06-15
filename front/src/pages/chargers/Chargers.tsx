@@ -13,7 +13,7 @@ import {
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../../components/UserManager";
 import { post } from "../../utils/net";
-import Back from "../back/Back";
+import Back from "../../components/back/Back";
 import "./Chargers.css";
 
 type UsersInfo = {
@@ -28,7 +28,7 @@ interface UsersInfoRes {
 }
 
 function UsersDraw(props: {
-  chargerID: number;
+  chargerID: string;
   visible: boolean;
   onClose: () => void;
 }) {
@@ -86,7 +86,7 @@ function UsersDraw(props: {
 }
 
 type ChargersList = {
-  chargerID: number;
+  chargerID: string;
   working: boolean;
   totalChargeCount: number;
   totalChargeTime: number;
@@ -100,7 +100,7 @@ interface ChargersRes {
 
 function Chargers() {
   const [chargers, setChargers] = useState<ChargersList>();
-  const [loadings, setLoadings] = useState<Record<number, boolean>>({});
+  const [loadings, setLoadings] = useState<Record<string, boolean>>({});
   const auth = useAuth();
   const { username, password } = auth.userAuth;
 
@@ -116,7 +116,7 @@ function Chargers() {
 
   useEffect(updateChargers, [password, username]);
 
-  function turnCharger(chargerID: number, turn: boolean) {
+  function turnCharger(chargerID: string, turn: boolean) {
     setLoadings(loadings => {
       loadings[chargerID] = true;
       return loadings;
@@ -140,7 +140,7 @@ function Chargers() {
   }
 
   const [usersDrawVisible, setUsersDrawVisible] = useState(false);
-  const [chargerID, setChargerID] = useState(0);
+  const [chargerID, setChargerID] = useState("");
 
   return (
     <>

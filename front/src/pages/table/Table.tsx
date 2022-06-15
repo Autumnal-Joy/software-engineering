@@ -2,7 +2,7 @@ import { BackTop, Card, Collapse, Descriptions, List, message } from "antd";
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../../components/UserManager";
 import { post } from "../../utils/net";
-import Back from "../back/Back";
+import Back from "../../components/back/Back";
 import "./Table.css";
 
 type TableData = {
@@ -14,7 +14,7 @@ type TableData = {
   totalServiceCost: number;
   totalCost: number;
   chargers: {
-    chargerID: number;
+    chargerID: string;
     totalChargeCount: number;
     totalChargeTime: number;
     totalChargeQuantity: number;

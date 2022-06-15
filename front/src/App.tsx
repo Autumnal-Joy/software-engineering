@@ -12,6 +12,7 @@ import {
 } from "./pages";
 import { UserContextProvider } from "./components/UserManager";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import Test from "./pages/test/Test";
 
 function App() {
   return (
@@ -19,23 +20,21 @@ function App() {
       <UserContextProvider>
         <BrowserRouter>
           <Routes>
-            <Route path="/">
-              <Route index element={<Login />} />
-            </Route>
+            <Route path="/" element={<Login />} />
             <Route element={<ProtectedRoute />}>
               <Route path="/user">
                 <Route index element={<User />} />
-                <Route path="make-order" element={<MakeOrder />}></Route>
-                <Route path="order-info" element={<OrderInfo />}></Route>
-                <Route path="bills" element={<Bills />}></Route>
+                <Route path="make-order" element={<MakeOrder />} />
+                <Route path="order-info" element={<OrderInfo />} />
+                <Route path="bills" element={<Bills />} />
               </Route>
               <Route path="/admin">
                 <Route index element={<Admin />} />
                 <Route path="chargers" element={<Chargers />} />
                 <Route path="table" element={<Table />} />
               </Route>
-              <Route path="*" />
             </Route>
+            <Route path="/test" element={<Test />} />
           </Routes>
         </BrowserRouter>
       </UserContextProvider>

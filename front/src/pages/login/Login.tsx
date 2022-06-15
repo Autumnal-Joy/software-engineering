@@ -1,8 +1,17 @@
 import { LockOutlined, UserOutlined } from "@ant-design/icons";
-import { Button, Card, Checkbox, Form, Input, message, PageHeader } from "antd";
+import {
+  Button,
+  Card,
+  Checkbox,
+  Form,
+  Input,
+  message,
+  PageHeader,
+  Space,
+} from "antd";
 import CryptoJS from "crypto-js";
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../components/UserManager";
 import { post } from "../../utils/net";
 import "./Login.css";
@@ -109,9 +118,14 @@ function Login() {
             <Checkbox>记住我</Checkbox>
           </Form.Item>
           <Form.Item>
-            <Button type="primary" htmlType="submit">
-              确认
-            </Button>
+            <Space size="large">
+              <Button type="primary" htmlType="submit">
+                确认
+              </Button>
+              <Link to="/test">
+                <Button type="ghost">验收测试</Button>
+              </Link>
+            </Space>
           </Form.Item>
         </Form>
       </Card>

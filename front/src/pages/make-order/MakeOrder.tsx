@@ -3,7 +3,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../components/UserManager";
 import { post } from "../../utils/net";
-import Back from "../back/Back";
+import Back from "../../components/back/Back";
 import "./MakeOrder.css";
 
 function Order() {
@@ -13,10 +13,7 @@ function Order() {
   const auth = useAuth();
   const { username, password } = auth.userAuth;
 
-  function onFinish(values: {
-    chargeQuantity: number;
-    chargeType: "fast" | "slow";
-  }) {
+  function onFinish(values: { chargeQuantity: number; chargeType: "F" | "T" }) {
     message.loading({ content: "处理中...", duration: 0, key });
     post("userSendOrder", { username, password, ...values })
       .then(() => {
@@ -39,8 +36,8 @@ function Order() {
             rules={[{ required: true, message: "请选择充电类别" }]}
           >
             <Radio.Group>
-              <Radio value="fast">快充</Radio>
-              <Radio value="slow">慢充</Radio>
+              <Radio value="F">快充</Radio>
+              <Radio value="T">慢充</Radio>
             </Radio.Group>
           </Form.Item>
 

@@ -13,11 +13,11 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../components/UserManager";
 import { post } from "../../utils/net";
-import Back from "../back/Back";
+import Back from "../../components/back/Back";
 import "./OrderInfo.css";
 
 function ModifyChargeModel(props: {
-  chargeType?: "fast" | "slow";
+  chargeType?: "F" | "T";
   chargeQuantity?: number;
   visible: boolean;
   setVisible: (visible: boolean) => void;
@@ -97,8 +97,8 @@ function ModifyChargeModel(props: {
       >
         <Form.Item label="充电类别" name="chargeType">
           <Radio.Group>
-            <Radio value="fast">快充</Radio>
-            <Radio value="slow">慢充</Radio>
+            <Radio value="F">快充</Radio>
+            <Radio value="T">慢充</Radio>
           </Radio.Group>
         </Form.Item>
 
@@ -174,7 +174,7 @@ function CancelChargeModel(props: {
 }
 
 interface Order {
-  chargeType: "fast" | "slow";
+  chargeType: "F" | "T";
   chargeQuantity: number;
 }
 interface OrderRes {
@@ -287,7 +287,7 @@ function OrderInfo() {
         {order ? (
           <Descriptions title="预约信息">
             <Descriptions.Item label="充电类别">
-              {{ fast: "快充", slow: "慢充" }[order.chargeType]}
+              {{ F: "快充", T: "慢充" }[order.chargeType]}
             </Descriptions.Item>
             <Descriptions.Item label="充电量">
               {order.chargeQuantity}度（kWH）
