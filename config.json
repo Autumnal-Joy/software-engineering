@@ -1,8 +1,8 @@
 {
-  "CQL": 1,
+  "CQL": 3,
   "FPN": 2,
   "TPN": 3,
-  "WSZ": 5,
+  "WSZ": 10,
   "FAST_SPEED": 0.008333333333,
   "SLOW_SPEED": 0.002777777778,
   "TIME_ACC": 10
