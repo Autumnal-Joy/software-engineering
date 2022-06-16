@@ -1,5 +1,6 @@
 import logging
-
+from structure import Gettime
+from structure import intTodatetime
 from structure import Order
 
 # FastChargingPileNum(FPN)        快充电桩数
@@ -27,7 +28,6 @@ class Service:
         self.Fast_Speed = pd.Fast_Speed
         self.Slow_Speed = pd.Slow_Speed
         self.Schedule = pd.Schedule
-        self.Gettime = pd.Gettime
 
     """ 
     params
@@ -49,9 +49,9 @@ class Service:
         else:
             data = {"status": True}
         if err is None:
-            log.info("用户{}登入成功".format(username))
+            log.info("{}:用户{}登入成功".format(intTodatetime(int(1000*Gettime())),username))
         else:
-            log.info("用户{}登入失败, {}".format(username, err))
+            log.info("{}:用户{}登入失败, {}".format(intTodatetime(int(1000*Gettime())),username, err))
         return data, err
 
     """ 
@@ -79,9 +79,9 @@ class Service:
             if self.db.Insert("UserInfo", username, table) is False:
                 data, err = None, "数据库载入错误"
         if err is None:
-            log.info("用户{}注册成功".format(username))
+            log.info("{}:用户{}注册成功".format(intTodatetime(int(1000*Gettime())),username))
         else:
-            log.info("用户{}注册失败, {}".format(username, err))
+            log.info("{}:用户{}注册失败, {}".format(intTodatetime(int(1000*Gettime())),username, err))
         return data, err
 
     """ 
@@ -102,7 +102,7 @@ class Service:
         if username in self.usr2ord:
             data, err = None, "用户已经预约过"
         else:
-            new_ord = Order(username, chargeType, chargeQuantity, self.Gettime)
+            new_ord = Order(username, chargeType, chargeQuantity)
             res = self.waitqueue.addord(new_ord)
             if res is False:
                 data, err = None, "等待区满，预约被拒绝"
@@ -110,9 +110,9 @@ class Service:
                 self.usr2ord[username] = new_ord
                 self.Schedule()
         if err is None:
-            log.info("用户{}预约成功".format(username))
+            log.info("{}:用户{}预约成功".format(intTodatetime(int(1000*Gettime())),username))
         else:
-            log.info("用户{}预约失败, {}".format(username, err))
+            log.info("{}:用户{}预约失败, {}".format(intTodatetime(int(1000*Gettime())),username, err))
         return data, err
 
     """ 
@@ -198,7 +198,10 @@ class Service:
             self.waitqueue.delord(username)
             del self.usr2ord[username]
             data, err = self.userSendOrder(username, chargeType, chargeQuantity)
-        log.info("用户{}修改充电方式->({}, {}, {})".format(username, username, chargeType, chargeQuantity))
+        if err is None:
+            log.info("{}:用户{}修改充电方式->({}, {}, {})".format(intTodatetime(int(1000*Gettime())),username, username, chargeType, chargeQuantity))
+        else:
+            log.info("{}:用户{}修改失败,err = {}".format(intTodatetime(int(1000*Gettime())),username,err))
         return data, err
 
     """ 
@@ -221,8 +224,11 @@ class Service:
             data, err = None, "用户不在等候区,请求被拒绝"
         else:
             self.waitqueue.change_quantity(username, chargeQuantity)
-        log.info("用户{}修改充电量->({}, {})".format(username, username,
+        if err is None:
+            log.info("{}:用户{}修改充电量->({}, {})".format(intTodatetime(int(1000*Gettime())),username, username,
                                               self.usr2ord[username].chargeQuantity))
+        else:
+            log.info("{}:用户{}修改充电量失败,err = {}".format(intTodatetime(int(1000*Gettime())),username,err))
         return data, err
 
     """ 
@@ -257,10 +263,10 @@ class Service:
             else:
                 del self.usr2ord[username]
         if err is None:
-            log.info("用户{}取消了订单".format(username))
+            log.info("{}:用户{}取消了订单".format(intTodatetime(int(1000*Gettime())),username))
             self.Schedule()
         else:
-            log.info("用户{}订单取消失败, {}".format(username, err))
+            log.info("{}:用户{}订单取消失败, {}".format(intTodatetime(int(1000*Gettime())),username, err))
         return data, err
 
     """ 

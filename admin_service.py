@@ -1,6 +1,7 @@
 import logging
 import sys
-
+from structure import Gettime
+from structure import intTodatetime
 from structure import Bill
 
 sys.path.append("")
@@ -34,7 +35,6 @@ class Service:
         self.Fast_Speed = pd.Fast_Speed
         self.Slow_Speed = pd.Slow_Speed
         self.Schedule = pd.Schedule
-        self.Gettime = pd.Gettime
 
     def debug(self):
         print("userord:", self.usr2ord)
@@ -68,9 +68,9 @@ class Service:
         else:
             data = {"status": True}
         if data["status"] == True:
-            log.info("管理员" + username + ": 登录成功")
+            log.info("{}:管理员".format(intTodatetime(int(1000*Gettime()))) + username + ": 登录成功")
         else:
-            log.info("登录失败，" + err)
+            log.info("{}:登录失败，".format(intTodatetime(int(1000*Gettime()))) + err)
         return data, err
 
     """
@@ -101,7 +101,7 @@ class Service:
             totalChargeQuantity = 0
             for i in table:
                 # print(i)
-                bill = Bill(table[i], self.Gettime)
+                bill = Bill(table[i])
                 # print(bill)
                 totalChargeCount = totalChargeCount + 1
                 totalChargeTime = totalChargeTime + (bill.end - bill.start)
@@ -113,7 +113,7 @@ class Service:
             Info = {"chargerID": boot.name, "working": boot.working, "totalChargeCount": totalChargeCount,
                     "totalChargeTime": totalChargeTime, "totalChargeQuantity": totalChargeQuantity}
             data.append(Info)
-        log.info("管理员" + username + ": 查询充电桩成功")
+        log.info("{}:管理员".format(intTodatetime(int(1000*Gettime()))) + username + ": 查询充电桩成功")
         return data, err
 
     """
@@ -132,12 +132,12 @@ class Service:
         # print("#########chargerID",int(chargerID[1:]))
         # print("#########test", self.FastBoot[int(chargerID[1:])])
         data, err = {"status": True}, None
-        print("****test")
+        #print("****test")
         if chargerID[0] == 'T':
             if turn == "off":
                 orderList = self.SlowBoot[int(chargerID[1:]) - 1].shut()
                 for order in orderList:
-                    print(order.username)
+                    #print(order.username)
                     self.waitqueue.emegency_add_s(order)
                 # print("******workingstate", self.SlowBoot[int(chargerID[1:]) - 1].working)
             else:
@@ -146,10 +146,10 @@ class Service:
             if turn == "off":
 
                 orderList = self.FastBoot[int(chargerID[1:]) - 1].shut()
-                print("****test1")
-                print(orderList)
+                #print("****test1")
+                #print(orderList)
                 for order in orderList:
-                    print(order.username)
+                    #print(order.username)
                     self.waitqueue.emegency_add_f(order)
             else:
                 self.FastBoot[int(chargerID[1:]) - 1].start()
@@ -159,7 +159,7 @@ class Service:
         else:
             logtxt = ": 打开"
         logtxt = logtxt + "充电桩" + chargerID
-        log.info("管理员" + username + logtxt)
+        log.info("{}:管理员".format(intTodatetime(int(1000*Gettime()))) + username + logtxt)
         return data, err
 
     """    
@@ -200,7 +200,7 @@ class Service:
             info = {}
             info["username"] = ord.username
             info["chargeQuantity"] = ord.chargeQuantity
-            now = self.Gettime()
+            now = Gettime()
             begin = ord.createtime
             info["waitingTime"] = (now - begin) * 1000
             data.append(info)
@@ -210,7 +210,7 @@ class Service:
             # print("waittimg",(now - begin) / 3600)
         # print("*******table", table)
         # print("******data",data)
-        log.info("管理员" + username + ": 查询充电桩" + chargerID + "服务用户成功")
+        log.info("{}:管理员".format(intTodatetime(int(1000*Gettime()))) + username + ": 查询充电桩" + chargerID + "服务用户成功")
         return data, err
 
     """
@@ -261,7 +261,7 @@ class Service:
         billall = {"time": "总共", "totalChargeCount": 0, "totalChargeTime": 0, "totalChargeQuantity": 0,
                    "totalChargeCost": 0, "totalServiceCost": 0, "totalCost": 0, "chargers": []}
         bootbilltable = {}
-        now = self.Gettime()
+        now = Gettime()
 
         for boot in BootList:
             table = self.db.Query("ChargerBillList", boot.name)
@@ -276,7 +276,7 @@ class Service:
                         "totalChargeCost": 0, "totalServiceCost": 0, "totalCost": 0}
             }
             for i in table:
-                bill = Bill(table[i], self.Gettime)
+                bill = Bill(table[i])
                 # bill.Show()  # 需修改，/ 3600
                 # print(bill.end - bill.start)
                 addDict = {"ChargeTime": (bill.end - bill.start) / 3600000, "ChargeQuantity": bill.real_quantity,
@@ -310,5 +310,5 @@ class Service:
         # print(billall)
 
         data = [billday, billweek, billmonth, billall]
-        log.info("管理员" + username + ": 查看报表成功")
+        log.info("{}:管理员".format(intTodatetime(int(1000*Gettime()))) + username + ": 查看报表成功")
         return data, err

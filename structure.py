@@ -11,7 +11,12 @@ SLOW_SPEED = 0
 
 log = logging.getLogger('app')
 
-
+system_start_time_stamp = 0
+system_start_time = 0
+TIME_ACC = 0
+# 计算时间函数Gettime()
+def Gettime():
+    return system_start_time_stamp + (time.time() - system_start_time) * TIME_ACC
 def intTodatetime(intValue):
     intValue = int(intValue)
     if len(str(intValue)) == 10:  # 精确到秒
@@ -29,7 +34,7 @@ def intTodatetime(intValue):
 
 
 class Order:
-    def __init__(self, username, chargeType, chargeQuantity, Gettime):
+    def __init__(self, username, chargeType, chargeQuantity):
         self.username = username  # 用户名
         self.chargeType = chargeType  # 充电类型
         self.chargeQuantity = chargeQuantity  # 充电量
@@ -47,7 +52,7 @@ id = 1
 
 
 class Bill:
-    def __init__(self, order, Gettime, canceled=0):
+    def __init__(self, order, canceled=0):
         if type(order) == Order:
             global id
             self.BillID = id
@@ -157,7 +162,7 @@ class Bill:
 
 
 class ChargeBoot:
-    def __init__(self, M: int, type: str, speed: int, rank: int, ReadyQueue: list, ready_queue_lock, Schedule, Gettime,
+    def __init__(self, M: int, type: str, speed: int, rank: int, ReadyQueue: list, ready_queue_lock, Schedule,
                  usr2bill,
                  usr2ord, time_acc, db):
         self.db = db
@@ -176,7 +181,6 @@ class ChargeBoot:
         self.usr2ord = usr2ord
         self.name = type + str(rank + 1)
         self.working = True
-        self.Gettime = Gettime
         self.time_acc = time_acc
 
     def get_all_ord_now(self):
@@ -186,7 +190,7 @@ class ChargeBoot:
     def start(self):
         self.totalwait = 0
         self.working = True
-        log.info("充电桩 {} 开机".format(self.name))
+        log.info("{}:充电桩 {} 开机".format(intTodatetime(int(1000*Gettime())),self.name))
 
     # 关机，故障，其他均摊
     # 将在队列中的拿出去
@@ -202,31 +206,29 @@ class ChargeBoot:
             head = self.ServeQueue.pop()
             self.timers[head.username][0].cancel()
             head.status = 'Partial-Compelete'
-            head.end = self.Gettime()
+            head.end = Gettime()
             if head.username in self.usr2bill:
-                bill = Bill(head, self.Gettime, 1)
+                bill = Bill(head, 1)
                 self.usr2bill[head.username].append(bill)
                 table = self.db.Query("ChargerBillList", self.name)
-                table[str(int(self.Gettime())) + '_' + str(bill.BillID)] = bill.todict()
+                table[str(int(Gettime())) + '_' + str(bill.BillID)] = bill.todict()
                 self.db.Update("ChargerBillList", self.name, table)
                 table = self.db.Query("UserBillList", head.username)
-                table[str(int(self.Gettime())) + '_' + str(bill.BillID)] = bill.todict()
+                table[str(int(Gettime())) + '_' + str(bill.BillID)] = bill.todict()
                 self.db.Update("UserBillList", head.username, table)
             else:
-                bill = Bill(head, self.Gettime, 1)
+                bill = Bill(head, 1)
                 self.usr2bill[head.username] = [bill]
                 table = self.db.Query("ChargerBillList", self.name)
-                table[str(int(self.Gettime())) + '_' + str(bill.BillID)] = bill.todict()
+                table[str(int(Gettime())) + '_' + str(bill.BillID)] = bill.todict()
                 self.db.Update("ChargerBillList", self.name, table)
                 table = self.db.Query("UserBillList", head.username)
-                table[str(int(self.Gettime())) + '_' + str(bill.BillID)] = bill.todict()
-
-                print("test10'...")
+                table[str(int(Gettime())) + '_' + str(bill.BillID)] = bill.todict()
                 self.db.Update("UserBillList", head.username, table)
             del self.timers[head.username]
             # 结算正在进行的
             neworder = Order(head.username, head.chargeType,
-                             head.chargeQuantity - (head.end - head.begin) * self.Charge_Speed, self.Gettime)
+                             head.chargeQuantity - (head.end - head.begin) * self.Charge_Speed)
             neworder.serialnum = head.serialnum
             self.usr2ord[head.username] = neworder
             ans.append(neworder)
@@ -234,25 +236,24 @@ class ChargeBoot:
             ans.append(self.ServeQueue.pop())
         self.working = False
         self.busy = False
-        log.info("充电桩 {} 关机".format(self.name))
+        log.info("{}:充电桩 {} 关机".format(intTodatetime(int(1000*Gettime())),self.name))
         return ans
 
     # 添加订单 外面控制了是否满 因此这里没必要控制
     def add(self, order: Order):
         order.aimed_end_time = (
-                                       self.Gettime() + self.CalcRealWaittime() + order.chargeQuantity / self.Charge_Speed) * 1000
+                                       Gettime() + self.CalcRealWaittime() + order.chargeQuantity / self.Charge_Speed) * 1000
         self.totalwait += order.chargeQuantity / self.Charge_Speed
         self.ServeQueue.push(order)
-        log.info("充电桩 {} 接到新订单: ({}, {}, {})".format(self.name, order.username, order.chargeType, order.chargeQuantity))
+        log.info("{}:充电桩 {} 接到新订单: ({}, {}, {})".format(intTodatetime(int(1000*Gettime())),self.name, order.username, order.chargeType, order.chargeQuantity))
         allord = self.ServeQueue.peek_all()
-        msg = "充电桩 {} 现有订单: [ ".format(self.name)
+        msg = "{}:充电桩 {} 现有订单: [ ".format(intTodatetime(int(1000*Gettime())),self.name)
         for singleord in allord:
             msg += '({}, {}, {}) '.format(singleord.username, singleord.chargeType, singleord.chargeQuantity)
         msg += ']'
         log.info(msg)
         if self.busy is False:
             self.consume()
-        print(self.timers)
 
     # 是否满
     def isFull(self):
@@ -265,42 +266,42 @@ class ChargeBoot:
             return
 
         cgt = order.chargeQuantity / self.Charge_Speed / self.time_acc
-        self.timers[order.username] = (Timer(cgt, self.CallBack), self.Gettime())
+        self.timers[order.username] = (Timer(cgt, self.CallBack), Gettime())
         self.timers[order.username][0].start()
-        order.begin = self.Gettime()
+        order.begin = Gettime()
         # print("user {}开启了一个{}s的定时(时间加速{}倍)".format(order.username, cgt,self.time_acc))
         log.info(
-            "user {} 的订单 ({}, {}) 在充电桩 {} 开始执行".format(order.username, order.chargeType, order.chargeQuantity,
+            "{}:user {} 的订单 ({}, {}) 在充电桩 {} 开始执行".format(intTodatetime(int(1000*Gettime())),order.username, order.chargeType, order.chargeQuantity,
                                                        self.name))
 
         self.busy = True
 
     # 定时器结束的回调函数，包含生成账单，从服务队列中移除等
     def CallBack(self, cancel=0):
-        endt = self.Gettime()
+        endt = Gettime()
         ord = self.ServeQueue.pop()
         ord.status = 'Compelete'
         ord.end = endt
         self.totalwait -= ord.chargeQuantity / self.Charge_Speed
         if ord.username in self.usr2bill:
-            bill = Bill(ord, self.Gettime, cancel)
+            bill = Bill(ord, cancel)
             self.usr2bill[ord.username].append(bill)
             table = self.db.Query("ChargerBillList", self.name)
-            table[str(int(self.Gettime())) + '_' + str(bill.BillID)] = bill.todict()
+            table[str(int(Gettime())) + '_' + str(bill.BillID)] = bill.todict()
             self.db.Update("ChargerBillList", self.name, table)
 
             table = self.db.Query("UserBillList", ord.username)
-            table[str(int(self.Gettime())) + '_' + str(bill.BillID)] = bill.todict()
+            table[str(int(Gettime())) + '_' + str(bill.BillID)] = bill.todict()
             self.db.Update("UserBillList", ord.username, table)
         else:
-            bill = Bill(ord, self.Gettime, cancel)
+            bill = Bill(ord, cancel)
             self.usr2bill[ord.username] = [bill]
             table = self.db.Query("ChargerBillList", self.name)
-            table[str(int(self.Gettime())) + '_' + str(bill.BillID)] = bill.todict()
+            table[str(int(Gettime())) + '_' + str(bill.BillID)] = bill.todict()
             self.db.Update("ChargerBillList", self.name, table)
 
             table = self.db.Query("UserBillList", ord.username)
-            table[str(int(self.Gettime())) + '_' + str(bill.BillID)] = bill.todict()
+            table[str(int(Gettime())) + '_' + str(bill.BillID)] = bill.todict()
             self.db.Update("UserBillList", ord.username, table)
         self.busy = False
         del self.timers[ord.username]
@@ -309,12 +310,12 @@ class ChargeBoot:
         self.consume()
         if cancel == 0:
             log.info(
-                "user {} 的订单 ({}, {}) 在充电桩 {} 执行完毕".format(ord.username, ord.chargeType, ord.chargeQuantity, self.name))
+                "{}:user {} 的订单 ({}, {}) 在充电桩 {} 执行完毕".format(intTodatetime(int(1000*Gettime())),ord.username, ord.chargeType, ord.chargeQuantity, self.name))
         else:
             log.info(
-                "user {} 的订单 ({}, {}) 在充电桩 {} 被终止".format(ord.username, ord.chargeType, ord.chargeQuantity, self.name))
+                "{}:user {} 的订单 ({}, {}) 在充电桩 {} 被终止".format(intTodatetime(int(1000*Gettime())),ord.username, ord.chargeType, ord.chargeQuantity, self.name))
         allord = self.ServeQueue.peek_all()
-        msg = "充电桩{}现有订单:[ ".format(self.name)
+        msg = "{}:充电桩{}现有订单:[ ".format(intTodatetime(int(1000*Gettime())),self.name)
         for singleord in allord:
             msg += '({}, {}, {}) '.format(singleord.username, singleord.chargeType, singleord.chargeQuantity)
         msg += ']'
@@ -326,7 +327,6 @@ class ChargeBoot:
         head = self.ServeQueue.peek()
         if head.username == username:
             # 计算已充电时间
-            print(self.timers)
             self.timers[username][0].cancel()
             self.CallBack(1)
             return True
@@ -336,7 +336,7 @@ class ChargeBoot:
             self.totalwait -= ord.chargeQuantity / self.Charge_Speed
             msg = '订单 ({}, {}, {}) 取消成功'.format(ord.username, ord.chargeType, ord.chargeQuantity)
             allord = self.ServeQueue.peek_all()
-            msg += "充电桩 {} 现有订单: [ ".format(self.name)
+            msg += "{}:充电桩 {} 现有订单: [ ".format(intTodatetime(int(1000*Gettime())),self.name)
             for singleord in allord:
                 msg += '({}, {}, {}) '.format(singleord.username, singleord.chargeType, singleord.chargeQuantity)
             msg += ']'
@@ -351,7 +351,7 @@ class ChargeBoot:
         top = self.ServeQueue.peek()
         if top is None:
             return self.totalwait
-        return self.totalwait - (self.Gettime() - self.timers[top.username][1])
+        return self.totalwait - (Gettime() - self.timers[top.username][1])
 
 
 class ListNode:
@@ -517,8 +517,9 @@ class WaitArea:
             self.mutex_wait_lock.release()
             return False
         self.mutex_wait_lock.release()
-        msg = "新订单 ({}, {}, {}) 预约成功,".format(order.username, order.chargeType, order.chargeQuantity)
-        msg += "现在的等候区:[ "
+        msg = "{}:新订单 ({}, {}, {}) 预约成功".format(intTodatetime(int(1000*Gettime())),order.username, order.chargeType, order.chargeQuantity)
+        log.info(msg)
+        msg = "{}:现在的等候区:[ ".format(intTodatetime(int(1000*Gettime())))
         allord = self.Wait_Queue.peek_all()
         for singleord in allord:
             msg += '({}, {}, {}) '.format(singleord.username, singleord.chargeType, singleord.chargeQuantity)
@@ -531,7 +532,7 @@ class WaitArea:
         self.usr2num[order.username] = "EF"
         self.emergency_fast_queue.push(order)
         allorder = self.emergency_fast_queue.peek_all()
-        msg = "系统调度，紧急调度队列 F:[ "
+        msg = "{}:系统调度，紧急调度队列 F:[ ".format(intTodatetime(int(1000*Gettime())))
         for singleord in allorder:
             msg += '({}, {}, {}) '.format(singleord.username, singleord.chargeType, singleord.chargeQuantity)
         msg += ']'
@@ -542,7 +543,7 @@ class WaitArea:
         self.usr2num[order.username] = "ET"
         self.emergency_slow_queue.push(order)
         allorder = self.emergency_slow_queue.peek_all()
-        msg = "系统调度，紧急调度队列slow:[ "
+        msg = "{}:系统调度，紧急调度队列slow:[ ".format(intTodatetime(int(1000*Gettime())))
         for singleord in allorder:
             msg += '({}, {}, {}) '.format(singleord.username, singleord.chargeType, singleord.chargeQuantity)
         msg += ']'
@@ -571,7 +572,9 @@ class WaitArea:
             self.mutex_wait_lock.release()
             return False
         self.mutex_wait_lock.release()
-        msg = "{} 的订单取消成功,现在的等候区: [ ".format(username)
+        msg = "{}:user \"{}\"的订单取消成功".format(intTodatetime(int(1000*Gettime())),username)
+        log.info(msg)
+        msg = "{}:现在的等候区: [ ".format(intTodatetime(int(1000*Gettime())))
         allord = self.Wait_Queue.peek_all()
         for singleord in allord:
             msg += '({}, {}, {}) '.format(singleord.username, singleord.chargeType, singleord.chargeQuantity)
@@ -658,13 +661,14 @@ class WaitArea:
 
 class PublicDataStruct:
     def __init__(self, db):
-        global FAST_SPEED, SLOW_SPEED
+        global FAST_SPEED, SLOW_SPEED,TIME_ACC,system_start_time,system_start_time_stamp
         with open("./config.json", encoding='utf-8') as f:
             data = json.load(f)
         self.N, self.M, self.FPN, self.TPN = data['WSZ'], data['CQL'], data['FPN'], data['TPN']
         FAST_SPEED = data['FAST_SPEED']
         SLOW_SPEED = data['SLOW_SPEED']
         self.time_acc = data["TIME_ACC"]  # 时间加速比
+        TIME_ACC = data["TIME_ACC"]
         # FAST_SPEED和SLOW_SPEED用于structure的其他类
         # self.Fast_Speed和self.Slow_Speed用于user.Service和admin.Service作为参数传递
         self.Fast_Speed = FAST_SPEED
@@ -680,17 +684,15 @@ class PublicDataStruct:
         self.SlowReadyQueue = [i for i in range(0, self.TPN)]
         self.FastBoot = [
             ChargeBoot(self.M, 'F', FAST_SPEED, i, self.FastReadyQueue, self.fast_ready_lock, self.Schedule,
-                       self.Gettime,
                        self.usr2bill,
                        self.usr2ord, self.time_acc, db) for i in range(0, self.FPN)]
         self.SlowBoot = [
             ChargeBoot(self.M, 'T', SLOW_SPEED, i, self.SlowReadyQueue, self.slow_ready_lock, self.Schedule,
-                       self.Gettime,
                        self.usr2bill,
                        self.usr2ord, self.time_acc, db) for i in range(0, self.TPN)]
 
-        self.system_start_time = time.time()
-        self.system_start_time_stamp = int(time.mktime(time.strptime("2022-06-14 06:00:00", "%Y-%m-%d %H:%M:%S")))
+        system_start_time = time.time()
+        system_start_time_stamp = int(time.mktime(time.strptime("2022-06-14 06:00:00", "%Y-%m-%d %H:%M:%S")))
 
     # 内部调度函数Schedule
     def Schedule(self):
@@ -707,11 +709,12 @@ class PublicDataStruct:
             Totalwait = []
             # 记录最开始的time
             t1 = time.time()
+            tm = intTodatetime(int(1000 * Gettime()))
             for i in range(0, len(self.FastReadyQueue)):
                 Totalwait.append(
                     max(0, self.FastBoot[self.FastReadyQueue[i]].CalcRealWaittime() + time.time() - t1))
             for i in range(0, len(self.FastReadyQueue)):
-                print("充电桩 {} 预计等待时间: {}", self.FastBoot[self.FastReadyQueue[i]].name, Totalwait[i])
+                log.info("{}:充电桩 {} 预计等待时间: {}".format(tm,self.FastBoot[self.FastReadyQueue[i]].name, Totalwait[i]))
                 if Totalwait[i] < mi:
                     sel = [i]
                     mi = Totalwait[i]
@@ -723,14 +726,14 @@ class PublicDataStruct:
                     break
             else:
                 if len(sel) == 0:
-                    log.info("调度中，没有正在工作的F型充电桩")
+                    log.info("{}:调度中，没有正在工作的F型充电桩").format(intTodatetime(int(1000*Gettime())))
                 else:
-                    log.info("最短调度的充电桩 {} 满了".format(self.FastBoot[self.FastReadyQueue[sel[0]]].name))
+                    log.info("{}:最短调度的充电桩 {} 满了".format(intTodatetime(int(1000*Gettime())),self.FastBoot[self.FastReadyQueue[sel[0]]].name))
                 break
             order = self.waitqueue.fetch_first_fast_order()
             order.status = "S_F" + str(self.FastReadyQueue[sel])
             order.chargeID = 'F' + str(self.FastReadyQueue[sel] + 1)
-            log.info("调度成功，将订单 ({}, {}, {}) 加入了充电桩 F{} 的服务队列...".format(order.username,
+            log.info("{}:调度成功，将订单 ({}, {}, {}) 加入了充电桩 F{} 的服务队列...".format(intTodatetime(int(1000*Gettime())),order.username,
                                                                         order.chargeType,
                                                                         order.chargeQuantity,
                                                                         self.FastReadyQueue[
@@ -748,11 +751,13 @@ class PublicDataStruct:
             # 得到所有有空位同一时刻的SlowBoot的实时totalwait
             Totalwait = []
             # 记录最开始的time
+            tm = intTodatetime(int(1000*Gettime()))
             t1 = time.time()
             for i in range(0, len(self.SlowReadyQueue)):
                 Totalwait.append(
                     max(0, self.SlowBoot[self.SlowReadyQueue[i]].CalcRealWaittime() + time.time() - t1))
             for i in range(0, len(self.SlowReadyQueue)):
+                log.info("{}:充电桩 {} 预计等待时间: {}".format(tm, self.SlowBoot[self.SlowReadyQueue[i]].name, Totalwait[i]))
                 if Totalwait[i] < mi:
                     sel = [i]
                     mi = Totalwait[i]
@@ -764,15 +769,15 @@ class PublicDataStruct:
                     break
             else:
                 if len(sel) == 0:
-                    log.info("调度中，没有正在工作的S型充电桩")
+                    log.info("{}:调度中，没有正在工作的S型充电桩").format(intTodatetime(int(1000*Gettime())))
                 else:
-                    log.info("最短调度的充电桩{}满了".format(self.SlowBoot[self.SlowReadyQueue[sel[0]]].name))
+                    log.info("{}:最短调度的充电桩{}满了".format(intTodatetime(int(1000*Gettime())),self.SlowBoot[self.SlowReadyQueue[sel[0]]].name))
 
                 break
             order = self.waitqueue.fetch_first_slow_order()
             order.status = "S_T" + str(self.SlowReadyQueue[sel])
             order.chargeID = 'T' + str(self.SlowReadyQueue[sel] + 1)
-            log.info("调度成功，将订单 ({}, {}, {}) 加入了充电桩 T{} 的服务队列...".format(order.username,
+            log.info("{}:调度成功，将订单 ({}, {}, {}) 加入了充电桩 T{} 的服务队列...".format(intTodatetime(int(1000*Gettime())),order.username,
                                                                         order.chargeType,
                                                                         order.chargeQuantity,
                                                                         self.SlowReadyQueue[
@@ -780,13 +785,9 @@ class PublicDataStruct:
             self.SlowBoot[self.SlowReadyQueue[sel]].add(order)
         self.slow_ready_lock.release()
         self.mutex_wait_lock.release()
-        msg = "现在的等候区:[ "
+        msg = "{}:现在的等候区:[ ".format(intTodatetime(int(1000*Gettime())))
         allord = self.waitqueue.Wait_Queue.peek_all()
         for singleord in allord:
             msg += '({}, {}, {}) '.format(singleord.username, singleord.chargeType, singleord.chargeQuantity)
         msg += ']'
         log.info(msg)
-
-    # 内部计算时间函数Gettime()
-    def Gettime(self):
-        return self.system_start_time_stamp + (time.time() - self.system_start_time) * self.time_acc
