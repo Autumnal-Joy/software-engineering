@@ -1,5 +1,6 @@
 import logging
 import sys
+
 from structure import Bill
 
 sys.path.append("..")
@@ -66,7 +67,10 @@ class Service:
             err = "用户名或密码错误"
         else:
             data = {"status": True}
-        log.info("管理员" + username + ": 登录成功")
+        if data["status"] == True:
+            log.info("管理员" + username + ": 登录成功")
+        else:
+            log.info("登录失败，" + err)
         return data, err
 
     """
@@ -91,17 +95,17 @@ class Service:
         # print("*******b", len(BootList))
         for boot in BootList:
             table = self.db.Query("ChargerBillList", boot.name)
-            #print(table)
+            # print(table)
             totalChargeCount = 0
             totalChargeTime = 0
             totalChargeQuantity = 0
             for i in table:
-                #print(i)
-                bill = Bill(table[i],self.Gettime)
-                #print(bill)
+                # print(i)
+                bill = Bill(table[i], self.Gettime)
+                # print(bill)
                 totalChargeCount = totalChargeCount + 1
                 totalChargeTime = totalChargeTime + (bill.end - bill.start)
-                #print(bill.end - bill.start)
+                # print(bill.end - bill.start)
                 totalChargeQuantity = totalChargeQuantity + bill.real_quantity
                 # print("**********totalChargestart", bill.start)
                 # print("**********totalChargestart", bill.end)
@@ -135,7 +139,7 @@ class Service:
                 for order in orderList:
                     print(order.username)
                     self.waitqueue.emegency_add_s(order)
-                #print("******workingstate", self.SlowBoot[int(chargerID[1:]) - 1].working)
+                # print("******workingstate", self.SlowBoot[int(chargerID[1:]) - 1].working)
             else:
                 self.SlowBoot[int(chargerID[1:]) - 1].start()
         else:
@@ -208,6 +212,7 @@ class Service:
         # print("******data",data)
         log.info("管理员" + username + ": 查询充电桩" + chargerID + "服务用户成功")
         return data, err
+
     """
     params
         username            用户名
@@ -272,9 +277,9 @@ class Service:
             }
             for i in table:
                 bill = Bill(table[i], self.Gettime)
-                #bill.Show()  # 需修改，/ 3600
-                #print(bill.end - bill.start)
-                addDict = {"ChargeTime": (bill.end - bill.start)/3600000, "ChargeQuantity": bill.real_quantity,
+                # bill.Show()  # 需修改，/ 3600
+                # print(bill.end - bill.start)
+                addDict = {"ChargeTime": (bill.end - bill.start) / 3600000, "ChargeQuantity": bill.real_quantity,
                            "ChargeCost": bill.chargecost, "ServiceCost": bill.servecost
                            }
                 passtime = now - bill.billTime / 1000
@@ -299,10 +304,10 @@ class Service:
             billmonth["chargers"].append(bootbilltable[boot.name]["month"])
             billall["chargers"].append(bootbilltable[boot.name]["all"])
 
-        #print(billday)
-        #print(billweek)
-        #print(billmonth)
-        #print(billall)
+        # print(billday)
+        # print(billweek)
+        # print(billmonth)
+        # print(billall)
 
         data = [billday, billweek, billmonth, billall]
         log.info("管理员" + username + ": 查看报表成功")
