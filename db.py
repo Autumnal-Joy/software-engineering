@@ -24,9 +24,8 @@ class DB:
     # 读取文件的方法，如果没有该文件，则创建，并加载json到内存中去
     def Read(self, table):
         self.table = table
-        file = ""
 
-        if self.path == None:
+        if self.path is None:
             file = table + '.json'
         else:
             file = os.path.join(self.path, table + ".json")
