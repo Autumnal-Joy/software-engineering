@@ -279,8 +279,8 @@ class Service:
                 bill = Bill(table[i])
                 # bill.Show()  # 需修改，/ 3600
                 # print(bill.end - bill.start)
-                addDict = {"ChargeTime": (bill.end - bill.start) / 3600000, "ChargeQuantity": bill.real_quantity,
-                           "ChargeCost": bill.chargecost, "ServiceCost": bill.servecost
+                addDict = {"ChargeTime": round((bill.end - bill.start) / 3600000, 3), "ChargeQuantity": round(bill.real_quantity, 3),
+                           "ChargeCost": round(bill.chargecost, 3), "ServiceCost": round(bill.servecost, 3)
                            }
                 passtime = now - bill.billTime / 1000
                 if passtime < 86400:
