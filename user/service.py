@@ -1,5 +1,6 @@
-import sys
 import logging
+import sys
+
 sys.path.append("..")
 from structure import Order
 
@@ -9,6 +10,7 @@ from structure import Order
 # ChargingQueueLen(M)          充电桩排队队列长度
 
 log = logging.getLogger('app')
+
 
 class Service:
     def __init__(self, db, pd):
@@ -28,6 +30,7 @@ class Service:
         self.Slow_Speed = pd.Slow_Speed
         self.Schedule = pd.Schedule
         self.Gettime = pd.Gettime
+
     """ 
     params
         username            用户名
@@ -50,7 +53,7 @@ class Service:
         if err is None:
             log.info("user:\"{}\"登入成功".format(username))
         else:
-            log.info("user:\"{}\"登入失败,err = {}".format(username,err))
+            log.info("user:\"{}\"登入失败,err = {}".format(username, err))
         return data, err
 
     """ 
@@ -80,7 +83,7 @@ class Service:
         if err is None:
             log.info("user:\"{}\"注册成功".format(username))
         else:
-            log.info("user:\"{}\"注册失败,err = {}".format(username,err))
+            log.info("user:\"{}\"注册失败,err = {}".format(username, err))
         return data, err
 
     """ 
@@ -101,7 +104,7 @@ class Service:
         if username in self.usr2ord:
             data, err = None, "用户已经预约过"
         else:
-            new_ord = Order(username, chargeType, chargeQuantity,self.Gettime)
+            new_ord = Order(username, chargeType, chargeQuantity, self.Gettime)
             res = self.waitqueue.addord(new_ord)
             if res is False:
                 data, err = None, "等待区满，预约被拒绝"
@@ -111,7 +114,7 @@ class Service:
         if err is None:
             log.info("user:\"{}\"预约成功".format(username))
         else:
-            log.info("user:\"{}\"预约失败,err{}".format(username,err))
+            log.info("user:\"{}\"预约失败,err{}".format(username, err))
         return data, err
 
     """ 
@@ -197,7 +200,7 @@ class Service:
             self.waitqueue.delord(username)
             del self.usr2ord[username]
             data, err = self.userSendOrder(username, chargeType, chargeQuantity)
-        log.info("user:\"{}\"修改充电方式->({},{},{})".format(username,username,chargeType,chargeQuantity))
+        log.info("user:\"{}\"修改充电方式->({},{},{})".format(username, username, chargeType, chargeQuantity))
         return data, err
 
     """ 
@@ -220,7 +223,8 @@ class Service:
             data, err = None, "用户不在等候区,请求被拒绝"
         else:
             self.waitqueue.change_quantity(username, chargeQuantity)
-        log.info("user:\"{}\"修改充电量->({},{},{})".format(username, username, self.usr2ord[username].chargeType, self.usr2ord[username].chargeQuantity))
+        log.info("user:\"{}\"修改充电量->({},{},{})".format(username, username, self.usr2ord[username].chargeType,
+                                                       self.usr2ord[username].chargeQuantity))
         return data, err
 
     """ 
@@ -258,8 +262,9 @@ class Service:
             log.info("user:\"{}\"取消了订单".format(username))
             self.Schedule()
         else:
-            log.info("user:\"{}\"取消失败,err = {}".format(username,err))
+            log.info("user:\"{}\"取消失败,err = {}".format(username, err))
         return data, err
+
     """ 
     params
         username            用户名

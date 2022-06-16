@@ -1,5 +1,6 @@
-from ast import main
-import os, json
+import json
+import os
+
 '''
 2022/06/15: 董文阔
 
@@ -11,6 +12,7 @@ import os, json
 
 '''
 
+
 class DB:
 
     # 构造函数传入一个路径，代表数据文件存放的位置
@@ -18,7 +20,6 @@ class DB:
         self.path = path
         self.buf = None
         self.table = None
-
 
     # 读取文件的方法，如果没有该文件，则创建，并加载json到内存中去
     def Read(self, table):
@@ -43,9 +44,9 @@ class DB:
 
     # 写回到数据文件中
     def Commit(self):
-        if self.table == None:
+        if self.table is None:
             print('fatal error! write table is empty')
-        if (self.path == None):
+        if self.path is None:
             json.dump(self.buf, open(self.table + '.json', 'w'))
         else:
             json.dump(self.buf, open(os.path.join(self.path, self.table + ".json"), "w"))
@@ -88,7 +89,6 @@ class DB:
         return True
         # else:
         #     return False
-
 
 
 '''
