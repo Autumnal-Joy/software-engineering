@@ -47,9 +47,9 @@ class DB:
         if self.table is None:
             print('fatal error! write table is empty')
         if self.path is None:
-            json.dump(self.buf, open(self.table + '.json', 'w'))
+            json.dump(self.buf, open(self.table + '.json', 'w'), indent=2)
         else:
-            json.dump(self.buf, open(os.path.join(self.path, self.table + ".json"), "w"))
+            json.dump(self.buf, open(os.path.join(self.path, self.table + ".json"), "w"), indent=2)
         self.buf = None
         self.table = None
 
@@ -72,12 +72,14 @@ class DB:
         if key in self.buf.keys():
             return False
         self.buf[key] = value
+        self.Commit()
         return True
 
     def Del(self, tablename, key) -> bool:
         self.Load(tablename)
         if key in self.buf.keys():
             del self.buf[key]
+            self.Commit()
             return True
         else:
             return False
@@ -86,6 +88,7 @@ class DB:
         self.Load(tablename)
         # if key in self.buf.keys():
         self.buf[key] = value
+        self.Commit()
         return True
         # else:
         #     return False

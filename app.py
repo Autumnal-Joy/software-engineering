@@ -116,7 +116,7 @@ def userCheck(username, password):
                 5. 无论是什么rpc，都首先检查头两个参数的用户信息，向郭阳传参时也没有拿掉。
 '''
 
-db = db.DB("data.db")
+db = db.DB("data")
 pd = st.PublicDataStruct(db)
 userService = us.Service(db, pd)
 adminService = ms.Service(db, pd)
