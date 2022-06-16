@@ -182,7 +182,7 @@ class ChargeBoot:
         self.name = type + str(rank + 1)
         self.working = True
         self.time_acc = time_acc
-
+        self.lock = threading.Lock()
     def get_all_ord_now(self):
         return self.ServeQueue.peek_all()
 
@@ -293,6 +293,7 @@ class ChargeBoot:
 
     # 定时器结束的回调函数，包含生成账单，从服务队列中移除等
     def CallBack(self, cancel=0):
+        self.lock.acquire()
         endt = Gettime()
         ord = self.ServeQueue.pop()
         ord.status = 'Compelete'
@@ -301,6 +302,7 @@ class ChargeBoot:
         if ord.username in self.usr2bill:
             bill = Bill(ord, cancel)
             self.usr2bill[ord.username].append(bill)
+            #print("1现在查的表是",self.name,ord.username)
             table = self.db.Query("ChargerBillList", self.name)
             table[str(int(Gettime())) + '_' + str(bill.BillID)] = bill.todict()
             self.db.Update("ChargerBillList", self.name, table)
@@ -311,6 +313,7 @@ class ChargeBoot:
         else:
             bill = Bill(ord, cancel)
             self.usr2bill[ord.username] = [bill]
+            #print("2现在查的表是",self.name,ord.username)
             table = self.db.Query("ChargerBillList", self.name)
             table[str(int(Gettime())) + '_' + str(bill.BillID)] = bill.todict()
             self.db.Update("ChargerBillList", self.name, table)
@@ -323,6 +326,7 @@ class ChargeBoot:
         del self.usr2ord[ord.username]
         # 继续服务下一个订单
         self.consume()
+        self.lock.release()
         if cancel == 0:
             log.info(
                 "{}:user {} 的订单 ({}, {}) 在充电桩 {} 执行完毕".format(intTodatetime(int(1000*Gettime())),ord.username, ord.chargeType, ord.chargeQuantity, self.name))
@@ -361,11 +365,15 @@ class ChargeBoot:
 
     # 计算实时全队等待时间
     def CalcRealWaittime(self):
+        self.lock.acquire()
         if self.totalwait == 0x3f3f3f3f:
+            self.lock.release()
             return 0x3f3f3f3f
         top = self.ServeQueue.peek()
         if top is None:
+            self.lock.release()
             return self.totalwait
+        self.lock.release()
         return self.totalwait - (Gettime() - self.timers[top.username][1])
 
 

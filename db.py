@@ -1,6 +1,6 @@
 import json
 import os
-
+import threading
 '''
 2022/06/15: 董文阔
 
@@ -20,6 +20,7 @@ class DB:
         self.path = path
         self.buf = None
         self.table = None
+        self.lock = threading.Lock()
 
     # 读取文件的方法，如果没有该文件，则创建，并加载json到内存中去
     def Read(self, table):
@@ -62,33 +63,44 @@ class DB:
             self.Read(table)
 
     def Query(self, tablename, key) -> dict:
+        self.lock.acquire()
         self.Load(tablename)
         if key in self.buf.keys():
+            self.lock.release()
             return self.buf[key]
+        self.lock.release()
         return dict()
 
     def Insert(self, tablename, key, value) -> bool:
+        self.lock.acquire()
         self.Load(tablename)
         if key in self.buf.keys():
+            self.lock.release()
             return False
         self.buf[key] = value
         self.Commit()
+        self.lock.release()
         return True
 
     def Del(self, tablename, key) -> bool:
+        self.lock.acquire()
         self.Load(tablename)
         if key in self.buf.keys():
             del self.buf[key]
             self.Commit()
+            self.lock.release()
             return True
         else:
+            self.lock.release()
             return False
 
     def Update(self, tablename, key, value) -> bool:
+        self.lock.acquire()
         self.Load(tablename)
         # if key in self.buf.keys():
         self.buf[key] = value
         self.Commit()
+        self.lock.release()
         return True
         # else:
         #     return False
