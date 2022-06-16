@@ -136,47 +136,27 @@ class Service:
         if chargerID[0] == 'T':
             if turn == "off":
                 orderList = self.SlowBoot[int(chargerID[1:]) - 1].shut()
-                for order in orderList:
-                    # print(order.username)
-                    self.waitqueue.emegency_add_s(order)
-                # print("******workingstate", self.SlowBoot[int(chargerID[1:]) - 1].working)
             else:
                 orderList = []
-                for chargerBoot in self.SlowBoot:
-                    orderList.extend(chargerBoot.pop_order_in_wait())
-                orderList.sort(key=lambda x: int(x.serialnum[1:]), reverse=False)
-                for order in orderList:
-                    self.waitqueue.emegency_add_s(order)
-                orderList = []
-                for chargerBoot in self.FastBoot:
-                    orderList.extend(chargerBoot.pop_order_in_wait())
-                orderList.sort(key=lambda x: int(x.serialnum[1:]), reverse=False)
-                for order in orderList:
-                    self.waitqueue.emegency_add_f(order)
                 self.SlowBoot[int(chargerID[1:]) - 1].start()
+                
+            for chargerBoot in self.SlowBoot:
+                orderList.extend(chargerBoot.pop_order_in_wait())
+            orderList.sort(key=lambda x: int(x.serialnum[1:]), reverse=False)
+            for order in orderList:
+                self.waitqueue.emegency_add_s(order)
         else:
             if turn == "off":
-
                 orderList = self.FastBoot[int(chargerID[1:]) - 1].shut()
-                # print("****test1")
-                # print(orderList)
-                for order in orderList:
-                    # print(order.username)
-                    self.waitqueue.emegency_add_f(order)
             else:
-                orderList = []
-                for chargerBoot in self.SlowBoot:
-                    orderList.extend(chargerBoot.pop_order_in_wait())
-                orderList.sort(key=lambda x: int(x.serialnum[1:]), reverse=False)
-                for order in orderList:
-                    self.waitqueue.emegency_add_s(order)
-                orderList = []
-                for chargerBoot in self.FastBoot:
-                    orderList.extend(chargerBoot.pop_order_in_wait())
-                orderList.sort(key=lambda x: int(x.serialnum[1:]), reverse=False)
-                for order in orderList:
-                    self.waitqueue.emegency_add_f(order)
+                orderList = []                
                 self.FastBoot[int(chargerID[1:]) - 1].start()
+                
+            for chargerBoot in self.FastBoot:
+                orderList.extend(chargerBoot.pop_order_in_wait())
+            orderList.sort(key=lambda x: int(x.serialnum[1:]), reverse=False)
+            for order in orderList:
+                self.waitqueue.emegency_add_f(order)
         self.Schedule()
         if turn == 'off':
             logtxt = ": 关闭"
