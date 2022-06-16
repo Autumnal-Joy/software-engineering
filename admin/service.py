@@ -1,5 +1,6 @@
 import logging
 import sys
+from structure import Bill
 
 sys.path.append("..")
 
@@ -90,13 +91,17 @@ class Service:
         # print("*******b", len(BootList))
         for boot in BootList:
             table = self.db.Query("ChargerBillList", boot.name)
+            #print(table)
             totalChargeCount = 0
             totalChargeTime = 0
             totalChargeQuantity = 0
             for i in table:
-                bill = table[i]
+                #print(i)
+                bill = Bill(table[i],self.Gettime)
+                #print(bill)
                 totalChargeCount = totalChargeCount + 1
-                totalChargeTime = totalChargeTime + (bill.end - bill.start) * 100  # 需修改，*100
+                totalChargeTime = totalChargeTime + (bill.end - bill.start)
+                #print(bill.end - bill.start)
                 totalChargeQuantity = totalChargeQuantity + bill.real_quantity
                 # print("**********totalChargestart", bill.start)
                 # print("**********totalChargestart", bill.end)
@@ -123,18 +128,28 @@ class Service:
         # print("#########chargerID",int(chargerID[1:]))
         # print("#########test", self.FastBoot[int(chargerID[1:])])
         data, err = {"status": True}, None
-        table = self.db.Query("ChargerInfo", None)
+        print("****test")
         if chargerID[0] == 'T':
             if turn == "off":
-                self.SlowBoot[int(chargerID[1:]) - 1].shut()
-                print("******workingstate", self.SlowBoot[int(chargerID[1:]) - 1].working)
+                orderList = self.SlowBoot[int(chargerID[1:]) - 1].shut()
+                for order in orderList:
+                    print(order.username)
+                    self.waitqueue.emegency_add_s(order)
+                #print("******workingstate", self.SlowBoot[int(chargerID[1:]) - 1].working)
             else:
                 self.SlowBoot[int(chargerID[1:]) - 1].start()
         else:
             if turn == "off":
-                self.FastBoot[int(chargerID[1:]) - 1].shut()
+
+                orderList = self.FastBoot[int(chargerID[1:]) - 1].shut()
+                print("****test1")
+                print(orderList)
+                for order in orderList:
+                    print(order.username)
+                    self.waitqueue.emegency_add_f(order)
             else:
                 self.FastBoot[int(chargerID[1:]) - 1].start()
+        self.Schedule()
         if turn == 'off':
             logtxt = ": 关闭"
         else:
@@ -256,9 +271,10 @@ class Service:
                         "totalChargeCost": 0, "totalServiceCost": 0, "totalCost": 0}
             }
             for i in table:
-                bill = table[i]
-                bill.Show()  # 需修改，/ 3600
-                addDict = {"ChargeTime": (bill.end - bill.start) / 3600, "ChargeQuantity": bill.real_quantity,
+                bill = Bill(table[i], self.Gettime)
+                #bill.Show()  # 需修改，/ 3600
+                #print(bill.end - bill.start)
+                addDict = {"ChargeTime": (bill.end - bill.start)/3600000, "ChargeQuantity": bill.real_quantity,
                            "ChargeCost": bill.chargecost, "ServiceCost": bill.servecost
                            }
                 passtime = now - bill.billTime / 1000
@@ -283,10 +299,10 @@ class Service:
             billmonth["chargers"].append(bootbilltable[boot.name]["month"])
             billall["chargers"].append(bootbilltable[boot.name]["all"])
 
-        print(billday)
-        print(billweek)
-        print(billmonth)
-        print(billall)
+        #print(billday)
+        #print(billweek)
+        #print(billmonth)
+        #print(billall)
 
         data = [billday, billweek, billmonth, billall]
         log.info("管理员" + username + ": 查看报表成功")
