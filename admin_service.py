@@ -68,9 +68,9 @@ class Service:
         else:
             data = {"status": True}
         if data["status"] == True:
-            log.info("{}:管理员".format(intTodatetime(int(1000*Gettime()))) + username + ": 登录成功")
+            log.info("{}:管理员".format(intTodatetime(int(1000 * Gettime()))) + username + ": 登录成功")
         else:
-            log.info("{}:登录失败，".format(intTodatetime(int(1000*Gettime()))) + err)
+            log.info("{}:登录失败，".format(intTodatetime(int(1000 * Gettime()))) + err)
         return data, err
 
     """
@@ -113,7 +113,7 @@ class Service:
             Info = {"chargerID": boot.name, "working": boot.working, "totalChargeCount": totalChargeCount,
                     "totalChargeTime": totalChargeTime, "totalChargeQuantity": totalChargeQuantity}
             data.append(Info)
-        log.info("{}:管理员".format(intTodatetime(int(1000*Gettime()))) + username + ": 查询充电桩成功")
+        log.info("{}:管理员".format(intTodatetime(int(1000 * Gettime()))) + username + ": 查询充电桩成功")
         return data, err
 
     """
@@ -132,26 +132,50 @@ class Service:
         # print("#########chargerID",int(chargerID[1:]))
         # print("#########test", self.FastBoot[int(chargerID[1:])])
         data, err = {"status": True}, None
-        #print("****test")
+        # print("****test")
         if chargerID[0] == 'T':
             if turn == "off":
                 orderList = self.SlowBoot[int(chargerID[1:]) - 1].shut()
                 for order in orderList:
-                    #print(order.username)
+                    # print(order.username)
                     self.waitqueue.emegency_add_s(order)
                 # print("******workingstate", self.SlowBoot[int(chargerID[1:]) - 1].working)
             else:
+                orderList = []
+                for chargerBoot in self.SlowBoot:
+                    orderList.extend(chargerBoot.pop_order_in_wait())
+                orderList.sort(key=lambda x: int(x.serialnum[1:]), reverse=False)
+                for order in orderList:
+                    self.waitqueue.emegency_add_s(order)
+                orderList = []
+                for chargerBoot in self.FastBoot:
+                    orderList.extend(chargerBoot.pop_order_in_wait())
+                orderList.sort(key=lambda x: int(x.serialnum[1:]), reverse=False)
+                for order in orderList:
+                    self.waitqueue.emegency_add_f(order)
                 self.SlowBoot[int(chargerID[1:]) - 1].start()
         else:
             if turn == "off":
 
                 orderList = self.FastBoot[int(chargerID[1:]) - 1].shut()
-                #print("****test1")
-                #print(orderList)
+                # print("****test1")
+                # print(orderList)
                 for order in orderList:
-                    #print(order.username)
+                    # print(order.username)
                     self.waitqueue.emegency_add_f(order)
             else:
+                orderList = []
+                for chargerBoot in self.SlowBoot:
+                    orderList.extend(chargerBoot.pop_order_in_wait())
+                orderList.sort(key=lambda x: int(x.serialnum[1:]), reverse=False)
+                for order in orderList:
+                    self.waitqueue.emegency_add_s(order)
+                orderList = []
+                for chargerBoot in self.FastBoot:
+                    orderList.extend(chargerBoot.pop_order_in_wait())
+                orderList.sort(key=lambda x: int(x.serialnum[1:]), reverse=False)
+                for order in orderList:
+                    self.waitqueue.emegency_add_f(order)
                 self.FastBoot[int(chargerID[1:]) - 1].start()
         self.Schedule()
         if turn == 'off':
@@ -159,7 +183,7 @@ class Service:
         else:
             logtxt = ": 打开"
         logtxt = logtxt + "充电桩" + chargerID
-        log.info("{}:管理员".format(intTodatetime(int(1000*Gettime()))) + username + logtxt)
+        log.info("{}:管理员".format(intTodatetime(int(1000 * Gettime()))) + username + logtxt)
         return data, err
 
     """    
@@ -210,7 +234,7 @@ class Service:
             # print("waittimg",(now - begin) / 3600)
         # print("*******table", table)
         # print("******data",data)
-        log.info("{}:管理员".format(intTodatetime(int(1000*Gettime()))) + username + ": 查询充电桩" + chargerID + "服务用户成功")
+        log.info("{}:管理员".format(intTodatetime(int(1000 * Gettime()))) + username + ": 查询充电桩" + chargerID + "服务用户成功")
         return data, err
 
     """
@@ -279,7 +303,8 @@ class Service:
                 bill = Bill(table[i])
                 # bill.Show()  # 需修改，/ 3600
                 # print(bill.end - bill.start)
-                addDict = {"ChargeTime": round((bill.end - bill.start) / 3600000, 3), "ChargeQuantity": round(bill.real_quantity, 3),
+                addDict = {"ChargeTime": round((bill.end - bill.start) / 3600000, 3),
+                           "ChargeQuantity": round(bill.real_quantity, 3),
                            "ChargeCost": round(bill.chargecost, 3), "ServiceCost": round(bill.servecost, 3)
                            }
                 passtime = now - bill.billTime / 1000
@@ -310,5 +335,5 @@ class Service:
         # print(billall)
 
         data = [billday, billweek, billmonth, billall]
-        log.info("{}:管理员".format(intTodatetime(int(1000*Gettime()))) + username + ": 查看报表成功")
+        log.info("{}:管理员".format(intTodatetime(int(1000 * Gettime()))) + username + ": 查看报表成功")
         return data, err
