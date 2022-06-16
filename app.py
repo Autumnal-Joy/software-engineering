@@ -152,11 +152,11 @@ def resp():
 
     else:
         params.pop('password', None)
-
         try:
             if method.startswith("user"):
                 fn = getattr(userService, method)
                 result, err = fn(**params)
+                pd.writestatenow()
             elif method.startswith("admin"):
                 fn = getattr(adminService, method)
                 result, err = fn(**params)
@@ -165,7 +165,7 @@ def resp():
         except AttributeError:
             err = MethodNotFound
 
-    # print("result:", result,"error:", err)
+    #print("result:", result,"error:", err)
     if err is None:
         return SuccessTemplate(result)
     else:
@@ -182,6 +182,11 @@ if __name__ == '__main__':
     log = logging.getLogger('app')
     log.setLevel(logging.INFO)
     log.addHandler(fileHandler)
+
+    fileHandler2 = logging.FileHandler("state.txt", encoding="utf-8")
+    log2 = logging.getLogger('state')
+    log2.setLevel(logging.INFO)
+    log2.addHandler(fileHandler2)
 
     app.debug = True
     app.run(port=8081)

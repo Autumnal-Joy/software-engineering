@@ -10,6 +10,7 @@ FAST_SPEED = 0
 SLOW_SPEED = 0
 
 log = logging.getLogger('app')
+log2 = logging.getLogger('state')
 
 system_start_time_stamp = 0
 system_start_time = 0
@@ -184,11 +185,16 @@ class ChargeBoot:
         self.time_acc = time_acc
         self.lock = threading.Lock()
     def get_all_ord_now(self):
-        return self.ServeQueue.peek_all()
+        self.lock.acquire()
+        ans = self.ServeQueue.peek_all()
+        self.lock.release()
+        return ans
 
     #用于负载均衡时将在等待的订单重新编排
     def pop_order_in_wait(self):
+        self.lock.acquire()
         if self.ServeQueue.size < 2:
+            self.lock.release()
             return []
         lis = []
         tail = self.ServeQueue.head.next
@@ -199,6 +205,7 @@ class ChargeBoot:
             ptail = tail.next
             self.ServeQueue.cancel(ord.username)
             tail = ptail
+        self.lock.release()
         return lis
 
     # 开机，均摊
@@ -814,3 +821,42 @@ class PublicDataStruct:
             msg += '({}, {}, {}) '.format(singleord.username, singleord.chargeType, singleord.chargeQuantity)
         msg += ']'
         log.info(msg)
+
+
+    def writestatenow(self):
+        #等待区所有的状态
+        t1 = self.waitqueue.Wait_Queue.peek_all()
+        str = "等待区:[ "
+        for ord in t1:
+            str += "({},{},{}) ".format(ord.username,ord.chargeType,ord.chargeQuantity)
+        str += ']\n'
+        #紧急快队列状态
+        t1 = self.waitqueue.emergency_fast_queue.peek_all()
+        str += "紧急快队列:[ "
+        for ord in t1:
+            str += "({},{},{}) ".format(ord.username, ord.chargeType, ord.chargeQuantity)
+        str += ']\n'
+        #紧急慢队列状态
+        t1 = self.waitqueue.emergency_slow_queue.peek_all()
+        str += "紧急慢队列:[ "
+        for ord in t1:
+            str += "({},{},{}) ".format(ord.username, ord.chargeType, ord.chargeQuantity)
+        str += ']\n'
+        #快充充电桩状态
+        for boot in self.FastBoot:
+            t1 = boot.get_all_ord_now()
+            str += "充电桩{}:[ ".format(boot.name)
+            for ord in t1:
+                str += "({},{},{}) ".format(ord.username, ord.chargeType, ord.chargeQuantity)
+            str += ']\n'
+        #慢充充电桩状态
+        for boot in self.SlowBoot:
+            if boot.working is False:
+                str += "充电桩{}:关闭\n".formaet(boot.name)
+                continue
+            t1 = boot.get_all_ord_now()
+            str += "充电桩{}:[ ".format(boot.name)
+            for ord in t1:
+                str += "({},{},{}) ".format(ord.username, ord.chargeType, ord.chargeQuantity)
+            str += ']\n'
+        log2.info("{}:".format(intTodatetime(int(Gettime()*1000))) + str)
