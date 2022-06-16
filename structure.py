@@ -186,6 +186,21 @@ class ChargeBoot:
     def get_all_ord_now(self):
         return self.ServeQueue.peek_all()
 
+    #用于负载均衡时将在等待的订单重新编排
+    def pop_order_in_wait(self):
+        if self.ServeQueue.size < 2:
+            return []
+        lis = []
+        tail = self.ServeQueue.head.next
+        while tail is not None:
+            ord = tail.order
+            lis.append(ord)
+            self.totalwait -= ord.chargeQuantity / self.Charge_Speed
+            ptail = tail.next
+            self.ServeQueue.cancel(ord.username)
+            tail = ptail
+        return lis
+
     # 开机，均摊
     def start(self):
         self.totalwait = 0
