@@ -3,7 +3,7 @@ import sys
 
 from structure import Bill
 
-sys.path.append("..")
+sys.path.append("")
 
 FPN = 0  # FastCharingPileNum(FPN)        快充电桩数
 TPN = 0  # TrickleChargingPileNum(TPN)    慢充电桩数

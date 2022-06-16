@@ -1,7 +1,5 @@
 import logging
-import sys
 
-sys.path.append("..")
 from structure import Order
 
 # FastChargingPileNum(FPN)        快充电桩数
@@ -51,9 +49,9 @@ class Service:
         else:
             data = {"status": True}
         if err is None:
-            log.info("user:\"{}\"登入成功".format(username))
+            log.info("用户{}登入成功".format(username))
         else:
-            log.info("user:\"{}\"登入失败,err = {}".format(username, err))
+            log.info("用户{}登入失败, {}".format(username, err))
         return data, err
 
     """ 
@@ -81,9 +79,9 @@ class Service:
             if self.db.Insert("UserInfo", username, table) is False:
                 data, err = None, "数据库载入错误"
         if err is None:
-            log.info("user:\"{}\"注册成功".format(username))
+            log.info("用户{}注册成功".format(username))
         else:
-            log.info("user:\"{}\"注册失败,err = {}".format(username, err))
+            log.info("用户{}注册失败, {}".format(username, err))
         return data, err
 
     """ 
@@ -112,9 +110,9 @@ class Service:
                 self.usr2ord[username] = new_ord
                 self.Schedule()
         if err is None:
-            log.info("user:\"{}\"预约成功".format(username))
+            log.info("用户{}预约成功".format(username))
         else:
-            log.info("user:\"{}\"预约失败,err{}".format(username, err))
+            log.info("用户{}预约失败, {}".format(username, err))
         return data, err
 
     """ 
@@ -200,7 +198,7 @@ class Service:
             self.waitqueue.delord(username)
             del self.usr2ord[username]
             data, err = self.userSendOrder(username, chargeType, chargeQuantity)
-        log.info("user:\"{}\"修改充电方式->({},{},{})".format(username, username, chargeType, chargeQuantity))
+        log.info("用户{}修改充电方式->({}, {}, {})".format(username, username, chargeType, chargeQuantity))
         return data, err
 
     """ 
@@ -223,8 +221,8 @@ class Service:
             data, err = None, "用户不在等候区,请求被拒绝"
         else:
             self.waitqueue.change_quantity(username, chargeQuantity)
-        log.info("user:\"{}\"修改充电量->({},{},{})".format(username, username, self.usr2ord[username].chargeType,
-                                                       self.usr2ord[username].chargeQuantity))
+        log.info("用户{}修改充电量->({}, {})".format(username, username,
+                                              self.usr2ord[username].chargeQuantity))
         return data, err
 
     """ 
@@ -259,10 +257,10 @@ class Service:
             else:
                 del self.usr2ord[username]
         if err is None:
-            log.info("user:\"{}\"取消了订单".format(username))
+            log.info("用户{}取消了订单".format(username))
             self.Schedule()
         else:
-            log.info("user:\"{}\"取消失败,err = {}".format(username, err))
+            log.info("用户{}订单取消失败, {}".format(username, err))
         return data, err
 
     """ 

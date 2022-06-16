@@ -13,10 +13,10 @@ import logging
 
 from flask import Flask, render_template, request
 
-import admin.service as ms
-import db.db as db
+import admin_service as ms
+import db as db
 import structure as st
-import user.service as us
+import user_service as us
 
 '''
 
@@ -131,7 +131,6 @@ def catch_all(path):
 @app.route('/api', methods=['POST'])
 def resp():
     req = request.json
-    print(req)
 
     result, err = None, None
 
@@ -179,8 +178,10 @@ if __name__ == '__main__':
     log = logging.getLogger('werkzeug')
     log.setLevel(logging.ERROR)
 
+    fileHandler = logging.FileHandler("log.txt", encoding="utf-8")
     log = logging.getLogger('app')
     log.setLevel(logging.INFO)
+    log.addHandler(fileHandler)
 
     app.debug = True
     app.run(port=8081)
