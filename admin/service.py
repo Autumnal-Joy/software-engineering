@@ -66,7 +66,10 @@ class Service:
             err = "用户名或密码错误"
         else:
             data = {"status": True}
-        log.info("管理员" + username + ": 登录成功")
+        if data["status"] == True:
+            log.info("管理员" + username + ": 登录成功")
+        else:
+            log.info("登录失败，" + err)
         return data, err
 
     """
