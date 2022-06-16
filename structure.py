@@ -735,15 +735,15 @@ class PublicDataStruct:
                     mi = Totalwait[i]
                 elif math.fabs(Totalwait[i] - mi) < 1e-6:
                     sel.append(i)
+            if len(sel) == 0:
+                log.info("{}:调度中，没有正在工作的F型充电桩".format(intTodatetime(int(1000 * Gettime()))))
+                break
             for i in sel:
                 if self.FastBoot[self.FastReadyQueue[i]].isFull() is False:
                     sel = i
                     break
             else:
-                if len(sel) == 0:
-                    log.info("{}:调度中，没有正在工作的F型充电桩").format(intTodatetime(int(1000*Gettime())))
-                else:
-                    log.info("{}:最短调度的充电桩 {} 满了".format(intTodatetime(int(1000*Gettime())),self.FastBoot[self.FastReadyQueue[sel[0]]].name))
+                log.info("{}:最短调度的充电桩 {} 满了".format(intTodatetime(int(1000*Gettime())),self.FastBoot[self.FastReadyQueue[sel[0]]].name))
                 break
             order = self.waitqueue.fetch_first_fast_order()
             order.status = "S_F" + str(self.FastReadyQueue[sel])
@@ -778,16 +778,15 @@ class PublicDataStruct:
                     mi = Totalwait[i]
                 elif math.fabs(Totalwait[i] - mi) < 1e-6:
                     sel.append(i)
+            if len(sel) == 0:
+                log.info("{}:调度中，没有正在工作的S型充电桩".format(intTodatetime(int(1000 * Gettime()))))
+                break
             for i in sel:
                 if self.SlowBoot[self.SlowReadyQueue[i]].isFull() is False:
                     sel = i
                     break
             else:
-                if len(sel) == 0:
-                    log.info("{}:调度中，没有正在工作的S型充电桩").format(intTodatetime(int(1000*Gettime())))
-                else:
-                    log.info("{}:最短调度的充电桩{}满了".format(intTodatetime(int(1000*Gettime())),self.SlowBoot[self.SlowReadyQueue[sel[0]]].name))
-
+                log.info("{}:最短调度的充电桩{}满了".format(intTodatetime(int(1000*Gettime())),self.SlowBoot[self.SlowReadyQueue[sel[0]]].name))
                 break
             order = self.waitqueue.fetch_first_slow_order()
             order.status = "S_T" + str(self.SlowReadyQueue[sel])
@@ -800,6 +799,7 @@ class PublicDataStruct:
             self.SlowBoot[self.SlowReadyQueue[sel]].add(order)
         self.slow_ready_lock.release()
         self.mutex_wait_lock.release()
+
         msg = "{}:现在的等候区:[ ".format(intTodatetime(int(1000*Gettime())))
         allord = self.waitqueue.Wait_Queue.peek_all()
         for singleord in allord:
