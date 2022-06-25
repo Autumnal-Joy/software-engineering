@@ -163,11 +163,11 @@ def resp():
                 pd.writestatenow()
             else:
                 err = MethodNotFound
-        except AttributeError:
+        except AttributeError as e:
+            logging.getLogger('app').error(str(e))
             print(method)
             err = MethodNotFound
 
-    #print("result:", result,"error:", err)
     if err is None:
         return SuccessTemplate(result)
     else:

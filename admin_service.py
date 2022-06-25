@@ -4,8 +4,6 @@ from structure import Gettime
 from structure import intTodatetime
 from structure import Bill
 
-sys.path.append("")
-
 FPN = 0  # FastCharingPileNum(FPN)        快充电桩数
 TPN = 0  # TrickleChargingPileNum(TPN)    慢充电桩数
 N = 0  # WaitingAreaSize(N)           等候区车位容量

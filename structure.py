@@ -602,7 +602,7 @@ class WaitArea:
             self.mutex_wait_lock.release()
             return False
         self.mutex_wait_lock.release()
-        msg = "{}:user \"{}\"的订单取消成功".format(intTodatetime(int(1000*Gettime())),username)
+        msg = "{}:用户 {} 的订单取消成功".format(intTodatetime(int(1000*Gettime())),username)
         log.info(msg)
         msg = "{}:现在的等候区: [ ".format(intTodatetime(int(1000*Gettime())))
         allord = self.Wait_Queue.peek_all()
