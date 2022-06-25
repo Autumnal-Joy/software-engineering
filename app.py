@@ -165,8 +165,9 @@ def resp():
                 err = MethodNotFound
         except AttributeError as e:
             logging.getLogger('app').error(str(e))
-            print(method)
             err = MethodNotFound
+
+    print(method)
 
     if err is None:
         return SuccessTemplate(result)
