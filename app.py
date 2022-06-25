@@ -160,9 +160,11 @@ def resp():
             elif method.startswith("admin"):
                 fn = getattr(adminService, method)
                 result, err = fn(**params)
+                pd.writestatenow()
             else:
                 err = MethodNotFound
         except AttributeError:
+            print(method)
             err = MethodNotFound
 
     #print("result:", result,"error:", err)

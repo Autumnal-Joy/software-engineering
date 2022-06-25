@@ -672,6 +672,12 @@ class WaitArea:
 
     def change_quantity(self, username: str, quantity: int):
         self.Wait_Queue.ord2idx[username].order.chargeQuantity = quantity
+        msg = "{}:现在的等候区: [ ".format(intTodatetime(int(1000 * Gettime())))
+        allord = self.Wait_Queue.peek_all()
+        for singleord in allord:
+            msg += '({}, {}, {}) '.format(singleord.username, singleord.chargeType, singleord.chargeQuantity)
+        msg += ']'
+        log.info(msg)
 
     # 检测是否有等待
     def haswaitF(self):
@@ -844,6 +850,9 @@ class PublicDataStruct:
         str += ']\n'
         #快充充电桩状态
         for boot in self.FastBoot:
+            if boot.working is False:
+                str += "充电桩{}:关闭\n".format(boot.name)
+                continue
             t1 = boot.get_all_ord_now()
             str += "充电桩{}:[ ".format(boot.name)
             for ord in t1:
@@ -852,7 +861,7 @@ class PublicDataStruct:
         #慢充充电桩状态
         for boot in self.SlowBoot:
             if boot.working is False:
-                str += "充电桩{}:关闭\n".formaet(boot.name)
+                str += "充电桩{}:关闭\n".format(boot.name)
                 continue
             t1 = boot.get_all_ord_now()
             str += "充电桩{}:[ ".format(boot.name)
