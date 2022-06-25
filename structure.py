@@ -129,7 +129,7 @@ class Bill:
         # 最多一次100度 慢充10度/小时 最多10小时 不跨过一天
         charge_cost = 0
         time_point = [0, 7, 10, 15, 18, 21, 23, 24]
-        fee = [0.3, 0.7, 1.0, 0.7, 1.0, 0.7, 0.3, 0.3]
+        fee = [0.4, 0.7, 1.0, 0.7, 1.0, 0.7, 0.4, 0.4]
         st = 0  # 第一个大于start.hour的时间节点
         for i in range(0, len(time_point)):
             if time_point[i] > start[3]:
@@ -184,6 +184,71 @@ class ChargeBoot:
         self.working = True
         self.time_acc = time_acc
         self.lock = threading.Lock()
+
+    def realcalc(self,bgtm,entm,nowquantity):
+        # 因为速度恒定，所以只知道start_tm和end_tm可以求出
+        # 峰时(1.0元/度) (10:00-15:00 18:00-21:00)
+        # 平时(0.7元/度) (7:00-10:00 15:00-18:00 21:00-23:00)
+        # 谷时(0.4元/度) (23:00-次日7:00)
+        t1 = bgtm
+        start = list(map(int, t1.split(' ')[0].split('-'))) + list(
+            map(int, t1.split(' ')[1].split('.')[0].split(':'))) + list(map(int, [t1.split(' ')[1].split('.')[1]]))
+        t1 = entm
+        end = list(map(int, t1.split(' ')[0].split('-'))) + list(
+            map(int, t1.split(' ')[1].split('.')[0].split(':'))) + list(map(int, [t1.split(' ')[1].split('.')[1]]))
+        # [year,month,day,hour,min,sec,msec]
+        # 因为是连续的,所以提前算出一天的,
+        # 最多一次100度 慢充10度/小时 最多10小时 不跨过一天
+        charge_cost = 0
+        time_point = [0, 7, 10, 15, 18, 21, 23, 24]
+        fee = [0.4, 0.7, 1.0, 0.7, 1.0, 0.7, 0.4, 0.4]
+        st = 0  # 第一个大于start.hour的时间节点
+        for i in range(0, len(time_point)):
+            if time_point[i] > start[3]:
+                st = i
+                break
+        ed = 0  # 最后一个小于end.hour的时间节点
+        for i in range(0, len(time_point)):
+            if time_point[i] > end[3]:
+                ed = (i - 1) % len(time_point)
+                break
+        # 循环统计
+        day = start[2]
+        if (day != end[2] or st <= ed):
+            charge_cost += ((time_point[st] * 3600 - start[3] * 3600 - start[4] * 60 - start[5] - start[6] * 0.001) % (
+                    24 * 3600)) * self.Charge_Speed * fee[(st - 1) % len(fee)]
+            while (day != end[2] or st != ed):
+                charge_cost += (((time_point[(st + 1) % len(time_point)] - time_point[st]) % 24) * 3600) * self.Charge_Speed * \
+                               fee[(st) % len(fee)]
+                st = st + 1
+                if st == len(time_point):
+                    st = 0
+                    day = day + 1
+            charge_cost += ((end[3] * 3600 + end[4] * 60 + end[5] + end[6] * 0.001 - time_point[ed] * 3600) % (
+                    24 * 3600)) * self.Charge_Speed * fee[(ed) % len(fee)]
+        elif (st == ed + 1):
+            charge_cost += (end[3] * 3600 + end[4] * 60 + end[5] + end[6] * 0.001 - start[3] * 3600 - start[4] * 60 -
+                            start[5] - start[6] * 0.001) * self.Charge_Speed * fee[(ed) % len(fee)]
+        else:
+            log.error("Real Calc Error")
+        return math.fabs(round(charge_cost + 0.8 * nowquantity, 2))
+
+    def get_real_time_info(self):
+        self.lock.acquire()
+        res = self.ServeQueue.peek_all()
+        ans = []
+        if len(res) >= 1:
+            nowt = Gettime()
+            bgtm = intTodatetime(res[0].begin * 1000)
+            edtm = intTodatetime(nowt * 1000)
+            nowquantity = self.Charge_Speed * (nowt - res[0].begin)
+            ans.append([res[0].username,round(nowquantity,2),self.realcalc(bgtm,edtm,nowquantity)])
+            del res[0]
+        for ord in res:
+            ans.append([ord.username,0,0])
+        self.lock.release()
+        return ans
+
     def get_all_ord_now(self):
         self.lock.acquire()
         ans = self.ServeQueue.peek_all()
@@ -853,19 +918,19 @@ class PublicDataStruct:
             if boot.working is False:
                 str += "充电桩{}:关闭\n".format(boot.name)
                 continue
-            t1 = boot.get_all_ord_now()
+            t1 = boot.get_real_time_info()
             str += "充电桩{}:[ ".format(boot.name)
             for ord in t1:
-                str += "({},{},{}) ".format(ord.username, ord.chargeType, ord.chargeQuantity)
+                str += "({},{},{}) ".format(ord[0], ord[1], ord[2])
             str += ']\n'
         #慢充充电桩状态
         for boot in self.SlowBoot:
             if boot.working is False:
                 str += "充电桩{}:关闭\n".format(boot.name)
                 continue
-            t1 = boot.get_all_ord_now()
+            t1 = boot.get_real_time_info()
             str += "充电桩{}:[ ".format(boot.name)
             for ord in t1:
-                str += "({},{},{}) ".format(ord.username, ord.chargeType, ord.chargeQuantity)
+                str += "({},{},{}) ".format(ord[0], ord[1], ord[2])
             str += ']\n'
         log2.info("{}:".format(intTodatetime(int(Gettime()*1000))) + str)
