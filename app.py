@@ -183,12 +183,12 @@ if __name__ == '__main__':
 
     fileHandler = logging.FileHandler("log.txt", encoding="utf-8")
     log = logging.getLogger('app')
-    log.setLevel(logging.ERROR)
+    log.setLevel(logging.INFO)
     log.addHandler(fileHandler)
 
     fileHandler2 = logging.FileHandler("state.txt", encoding="utf-8")
     log2 = logging.getLogger('state')
-    log2.setLevel(logging.ERROR)
+    log2.setLevel(logging.INFO)
     log2.addHandler(fileHandler2)
 
     app.debug = True
