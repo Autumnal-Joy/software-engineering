@@ -165,8 +165,9 @@ def resp():
                 err = MethodNotFound
         except AttributeError as e:
             logging.getLogger('app').error(str(e))
-            print(method)
             err = MethodNotFound
+
+    print(method)
 
     if err is None:
         return SuccessTemplate(result)
@@ -182,12 +183,12 @@ if __name__ == '__main__':
 
     fileHandler = logging.FileHandler("log.txt", encoding="utf-8")
     log = logging.getLogger('app')
-    log.setLevel(logging.INFO)
+    log.setLevel(logging.ERROR)
     log.addHandler(fileHandler)
 
     fileHandler2 = logging.FileHandler("state.txt", encoding="utf-8")
     log2 = logging.getLogger('state')
-    log2.setLevel(logging.INFO)
+    log2.setLevel(logging.ERROR)
     log2.addHandler(fileHandler2)
 
     app.debug = True
